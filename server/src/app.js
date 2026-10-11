@@ -1,17 +1,21 @@
 import cors from "cors";
 import express from "express";
-import { errorHandler } from "./middlewares/errors.js";
+import { errorHandler, notFoundMiddleware } from "./middlewares/errors.js";
+import apiRouter from "./routes/index.js";
+import { loggerMiddleware } from "./middlewares/logger.js";
 
 export function createApp() {
     const app = express();
 
-    app.use(cors(), express.json());
+    app.use(loggerMiddleware, cors(), express.json());
 
-    app.get("/api/health", (req, res) => {
+    app.get("/api/health", (_req, res) => {
         res.json({ ok: true });
     });
 
-    app.use(errorHandler);
+    app.use("/api", apiRouter);
+
+    app.use(notFoundMiddleware, errorHandler);
 
     return app;
 }
