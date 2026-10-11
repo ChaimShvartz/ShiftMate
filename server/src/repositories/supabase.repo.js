@@ -52,7 +52,9 @@ export function createSupabaseRepo(tableName) {
     }
 
     async function countDocs(filter = {}) {
-        let query = supabase.from(tableName).select("*", { count: "exact", head: true });
+        let query = supabase
+            .from(tableName)
+            .select("*", { count: "exact", head: true });
         for (const [key, val] of Object.entries(filter)) {
             query = query.eq(key, val);
         }
