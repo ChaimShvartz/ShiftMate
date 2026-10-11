@@ -6,16 +6,10 @@ import { throwHttpError } from "../utils/errors.js";
 export const authService = {
     async authenticateUser(userRecord, plainPassword) {
         if (!userRecord) {
-            throwHttpError(401, "Invalid credentials");
+            throwHttpError(404, "User not found");
         }
 
-        const passwordHash = userRecord.password || userRecord.password_hash;
-        if (!passwordHash) {
-            throwHttpError(401, "Invalid credentials");
-        }
-
-        const isValid = await comparePassword(plainPassword, passwordHash);
-        if (!isValid) {
+        if (!await comparePassword(plainPassword, userRecord.password)) {
             throwHttpError(401, "Invalid credentials");
         }
 

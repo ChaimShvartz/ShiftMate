@@ -4,8 +4,12 @@ import { throwHttpError } from "../utils/errors.js";
 export const usersService = {
     async createUser(
         userData,
-        { existingManagerInUnit, existingEmailUser } = {},
+        { existingManagerInUnit, existingEmailUser, existingAdmin } = {},
     ) {
+        if (userData.role === "admin" && existingAdmin) {
+            throwHttpError(403, "System is already initialized");
+        }
+
         if (userData.role === "manager" && existingManagerInUnit) {
             throwHttpError(
                 409,
