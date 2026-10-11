@@ -1,5 +1,11 @@
-import { shiftWeeksRepo } from "../repositories/index.js";
+import { shiftWeeksRepo, usersRepo } from "../repositories/index.js";
+import { excelService } from "../services/excel.service.js";
 import { shiftsService } from "../services/shifts.service.js";
+import {
+    emitShiftCreated,
+    emitShiftDeleted,
+    emitShiftUpdated,
+} from "../sockets/shifts.socket.js";
 import { throwHttpError } from "../utils/errors.js";
 
 export const shiftController = {
@@ -49,6 +55,12 @@ export const shiftController = {
         );
 
         const insertedId = await shiftWeeksRepo.createDoc(weekData);
+
+        emitShiftCreated(unitName, {
+            weekNumber: weekData.weekNumber,
+            unitName,
+        });
+
         res.status(201).json({
             success: true,
             data: {
@@ -90,6 +102,11 @@ export const shiftController = {
             { $set: updateQuery },
         );
 
+        emitShiftUpdated(unitName, {
+            weekNumber: Number(weekNumber),
+            shiftId,
+        });
+
         res.json({
             success: true,
             data: {
@@ -116,13 +133,30 @@ export const shiftController = {
             { $pull: { shifts: { id: Number(shiftId) || shiftId } } },
         );
 
+        emitShiftDeleted(unitName, {
+            weekNumber: Number(weekNumber),
+            shiftId,
+        });
+
         res.json({
             success: true,
             deleted: { weekNumber: Number(weekNumber), shiftId },
         });
     },
 
-    async getImportTemplate(_req, res) {
+    async getImportTemplate(req, res) {
+        const unitName = req.user?.unitName;
+        if (!unitName) {
+            throwHttpError(400, "User is not assigned to a unit");
+        }
+
+        const employees = await usersRepo.getAllDocs({
+            unit_name: unitName,
+            role: "employee",
+        });
+
+        const buffer = await excelService.buildTemplate(employees);
+
         res.setHeader(
             "Content-Type",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -131,10 +165,54 @@ export const shiftController = {
             "Content-Disposition",
             'attachment; filename="shifts_template.xlsx"',
         );
-        res.send(Buffer.from(""));
+        res.send(buffer);
     },
 
     async importShifts(req, res) {
-        return shiftController.createWeek(req, res);
+        const unitName = req.user?.unitName;
+        if (!unitName) {
+            throwHttpError(400, "User is not assigned to a unit");
+        }
+
+        if (!req.body || (Buffer.isBuffer(req.body) && req.body.length === 0)) {
+            throwHttpError(400, "Please upload a valid Excel file");
+        }
+
+        const buffer = Buffer.isBuffer(req.body)
+            ? req.body
+            : Buffer.from(req.body);
+
+        const employees = await usersRepo.getAllDocs({
+            unit_name: unitName,
+            role: "employee",
+        });
+
+        const rows = await excelService.parseShiftsFile(buffer);
+        const parsedShifts = excelService.validateShiftRows(rows, employees);
+
+        const latestWeekDoc = await shiftWeeksRepo.findOne(
+            { unitName },
+            { sort: { weekNumber: -1 } },
+        );
+
+        const weekData = shiftsService.createWeek(
+            { unitName, shifts: parsedShifts },
+            latestWeekDoc,
+        );
+
+        const insertedId = await shiftWeeksRepo.createDoc(weekData);
+
+        emitShiftCreated(unitName, {
+            weekNumber: weekData.weekNumber,
+            unitName,
+        });
+
+        res.status(201).json({
+            success: true,
+            data: {
+                _id: insertedId,
+                ...weekData,
+            },
+        });
     },
 };

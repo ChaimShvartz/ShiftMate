@@ -32,3 +32,28 @@ export function authorizeRole(...allowedRoles) {
         next();
     };
 }
+
+export function socketAuth(socket, next) {
+    const token = socket.handshake.auth?.token;
+
+    if (!token) {
+        const err = new Error("Authentication required - Missing token");
+        err.data = {
+            status: 401,
+            details: "Token is required for socket connection",
+        };
+        return next(err);
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        socket.user = decoded;
+        next();
+    } catch {
+        const err = new Error(
+            "Authentication required - Invalid or expired token",
+        );
+        err.data = { status: 401, details: "Token verification failed" };
+        next(err);
+    }
+}
