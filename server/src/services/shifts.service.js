@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { throwHttpError } from "../utils/errors.js";
 
 export const shiftsService = {
@@ -12,7 +11,7 @@ export const shiftsService = {
             if (diffDays < 7) {
                 const daysLeft = Math.ceil(7 - diffDays);
                 throwHttpError(
-                    400,
+                    409,
                     `A schedule is already active. A new week can only be created 7 days after the last one (${daysLeft} day(s) remaining)`,
                 );
             }
@@ -24,7 +23,7 @@ export const shiftsService = {
                 ? latestWeekDoc.weekNumber + 1
                 : 1);
 
-        const processedShifts = (weekData.shifts || []).map((shift) => {
+        const processedShifts = (weekData.shifts || []).map((shift, index) => {
             const start = new Date(shift.startTime).getTime();
             const end = new Date(shift.endTime).getTime();
 
@@ -33,9 +32,8 @@ export const shiftsService = {
             }
 
             return {
-                id: shift.id || crypto.randomUUID(),
+                id: index + 1,
                 title: shift.title || "",
-                role: shift.role || null,
                 assignedEmployeeCode: shift.assignedEmployeeCode || null,
                 startTime: new Date(shift.startTime),
                 endTime: new Date(shift.endTime),
@@ -43,9 +41,22 @@ export const shiftsService = {
             };
         });
 
+        const weekStartDate = weekData.weekStartDate
+            ? new Date(weekData.weekStartDate)
+            : new Date(
+                  Math.min(
+                      ...processedShifts.map((s) => s.startTime.getTime()),
+                  ),
+              );
+        const expiresAt = new Date(
+            weekStartDate.getTime() + 30 * 24 * 60 * 60 * 1000,
+        );
+
         return {
             unitName: weekData.unitName,
             weekNumber,
+            weekStartDate,
+            expiresAt,
             createdAt: new Date(),
             shifts: processedShifts,
         };
@@ -76,7 +87,6 @@ export const shiftsService = {
         const cleanUpdates = {};
 
         if (updates.title !== undefined) cleanUpdates.title = updates.title;
-        if (updates.role !== undefined) cleanUpdates.role = updates.role;
         if (updates.assignedEmployeeCode !== undefined) {
             cleanUpdates.assignedEmployeeCode = updates.assignedEmployeeCode;
         }
