@@ -1,45 +1,43 @@
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config.js";
-import { loginSchema } from "../models/user.schema.js";
 import { comparePassword } from "../utils/auth.js";
 import { throwHttpError } from "../utils/errors.js";
 
 export const authService = {
-    validateLoginInput(credentials) {
-        return loginSchema.parse(credentials);
-    },
-
-    async validateCredentials(userRecord, plainPassword) {
-        if (!userRecord || !userRecord.password_hash) {
+    async authenticateUser(userRecord, plainPassword) {
+        if (!userRecord) {
             throwHttpError(401, "Invalid credentials");
         }
 
-        const isValid = await comparePassword(
-            plainPassword,
-            userRecord.password_hash,
-        );
+        const passwordHash = userRecord.password || userRecord.password_hash;
+        if (!passwordHash) {
+            throwHttpError(401, "Invalid credentials");
+        }
+
+        const isValid = await comparePassword(plainPassword, passwordHash);
         if (!isValid) {
             throwHttpError(401, "Invalid credentials");
         }
 
-        return {
-            employeeCode: userRecord.employee_code,
-            role: userRecord.role,
-            fullName: userRecord.full_name,
-            unitName: userRecord.unit_name || null,
-        };
-    },
-
-    generateToken(userPayload, expiresIn = "30d") {
-        return jwt.sign(
+        const token = jwt.sign(
             {
-                employeeCode: userPayload.employeeCode,
-                role: userPayload.role,
-                unitName: userPayload.unitName,
+                employeeCode: userRecord.employee_code,
+                role: userRecord.role,
+                unitName: userRecord.unit_name || null,
             },
             JWT_SECRET,
-            { expiresIn },
+            { expiresIn: "30d" },
         );
+
+        return {
+            token,
+            user: {
+                employeeCode: userRecord.employee_code,
+                role: userRecord.role,
+                fullName: userRecord.full_name,
+                unitName: userRecord.unit_name || null,
+            },
+        };
     },
 
     verifyToken(token) {
