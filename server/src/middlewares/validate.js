@@ -5,9 +5,15 @@ export const validate = (schema, source = "body") => {
         const result = schema.safeParse(req[source]);
 
         if (!result.success) {
-            const message =
-                result.error.issues?.[0]?.message || "Validation failed";
-            throwHttpError(400, message);
+            const issues = result.error.issues.map((i) => ({
+                field: i.path.join("."),
+                message: i.message,
+            }));
+            throwHttpError(
+                400,
+                issues[0]?.message || "Validation failed",
+                issues,
+            );
         }
 
         req[source] = result.data;
