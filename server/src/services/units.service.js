@@ -1,4 +1,5 @@
 import { createUnitSchema, updateUnitSchema } from "../models/unit.schema.js";
+import { throwHttpError } from "../utils/errors.js";
 
 export const unitsService = {
     prepareCreate(inputData, existingUnit) {
@@ -7,9 +8,7 @@ export const unitsService = {
         const parsed = createUnitSchema.parse(payload);
 
         if (existingUnit) {
-            const err = new Error(`Unit '${parsed.name}' already exists`);
-            err.status = 409;
-            throw err;
+            throwHttpError(409, `Unit '${parsed.name}' already exists`);
         }
 
         return { name: parsed.name };
@@ -25,9 +24,7 @@ export const unitsService = {
         }
 
         if (existingTargetUnit) {
-            const err = new Error(`Unit '${parsed.name}' already exists`);
-            err.status = 409;
-            throw err;
+            throwHttpError(409, `Unit '${parsed.name}' already exists`);
         }
 
         return { name: parsed.name };
@@ -35,15 +32,11 @@ export const unitsService = {
 
     validateDelete(unitRecord, userCountInUnit = 0) {
         if (!unitRecord) {
-            const err = new Error("Unit not found");
-            err.status = 404;
-            throw err;
+            throwHttpError(404, "Unit not found");
         }
 
         if (userCountInUnit > 0) {
-            const err = new Error("Cannot delete unit with active members");
-            err.status = 409;
-            throw err;
+            throwHttpError(409, "Cannot delete unit with active members");
         }
 
         return true;

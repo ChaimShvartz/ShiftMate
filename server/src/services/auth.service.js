@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config.js";
 import { loginSchema } from "../models/user.schema.js";
 import { comparePassword } from "../utils/auth.js";
+import { throwHttpError } from "../utils/errors.js";
 
 export const authService = {
     validateLoginInput(credentials) {
@@ -10,9 +11,7 @@ export const authService = {
 
     async validateCredentials(userRecord, plainPassword) {
         if (!userRecord || !userRecord.password_hash) {
-            const err = new Error("Invalid credentials");
-            err.status = 401;
-            throw err;
+            throwHttpError(401, "Invalid credentials");
         }
 
         const isValid = await comparePassword(
@@ -20,9 +19,7 @@ export const authService = {
             userRecord.password_hash,
         );
         if (!isValid) {
-            const err = new Error("Invalid credentials");
-            err.status = 401;
-            throw err;
+            throwHttpError(401, "Invalid credentials");
         }
 
         return {
@@ -49,9 +46,7 @@ export const authService = {
         try {
             return jwt.verify(token, JWT_SECRET);
         } catch {
-            const error = new Error("Invalid or expired token");
-            error.status = 401;
-            throw error;
+            throwHttpError(401, "Invalid or expired token");
         }
     },
 };

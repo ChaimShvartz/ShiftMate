@@ -4,6 +4,7 @@ import {
     updateUserSchema,
 } from "../models/user.schema.js";
 import { generateEmployeeCode, hashPassword } from "../utils/auth.js";
+import { throwHttpError } from "../utils/errors.js";
 
 export const usersService = {
     async prepareCreate(
@@ -13,17 +14,14 @@ export const usersService = {
         const parsed = createUserSchema.parse(inputData);
 
         if (parsed.role === "manager" && existingManagerInUnit) {
-            const err = new Error(
+            throwHttpError(
+                409,
                 `Unit '${parsed.unitName}' already has an active manager`,
             );
-            err.status = 409;
-            throw err;
         }
 
         if (existingEmailUser) {
-            const err = new Error("Email address is already in use");
-            err.status = 409;
-            throw err;
+            throwHttpError(409, "Email address is already in use");
         }
 
         const employee_code = generateEmployeeCode(6);
@@ -44,9 +42,7 @@ export const usersService = {
 
     async prepareUpdate(existingUser, inputData) {
         if (!existingUser) {
-            const err = new Error("User not found");
-            err.status = 404;
-            throw err;
+            throwHttpError(404, "User not found");
         }
 
         const parsed = updateUserSchema.parse(inputData);
@@ -69,9 +65,7 @@ export const usersService = {
 
     async prepareSelfUpdate(currentUser, inputData) {
         if (!currentUser) {
-            const err = new Error("Unauthorized");
-            err.status = 401;
-            throw err;
+            throwHttpError(401, "Unauthorized");
         }
 
         const parsed = updateMeSchema.parse(inputData);
@@ -91,25 +85,21 @@ export const usersService = {
 
     validateDelete(userRecord, { hasActiveShifts, hasActiveSwaps } = {}) {
         if (!userRecord) {
-            const err = new Error("User not found");
-            err.status = 404;
-            throw err;
+            throwHttpError(404, "User not found");
         }
 
         if (userRecord.role === "manager") {
-            const err = new Error(
+            throwHttpError(
+                400,
                 "Managers cannot be deleted directly. Use manager replacement instead.",
             );
-            err.status = 400;
-            throw err;
         }
 
         if (hasActiveShifts || hasActiveSwaps) {
-            const err = new Error(
+            throwHttpError(
+                409,
                 "Cannot delete employee with active shifts or pending swap requests",
             );
-            err.status = 409;
-            throw err;
         }
 
         return true;
@@ -117,17 +107,14 @@ export const usersService = {
 
     async prepareReplaceManager(currentManager, newManagerData) {
         if (!currentManager) {
-            const err = new Error("Current manager not found");
-            err.status = 404;
-            throw err;
+            throwHttpError(404, "Current manager not found");
         }
 
         if (currentManager.role !== "manager") {
-            const err = new Error(
+            throwHttpError(
+                400,
                 "The specified user to replace is not a manager",
             );
-            err.status = 400;
-            throw err;
         }
 
         const parsed = createUserSchema.parse({
