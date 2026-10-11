@@ -1,36 +1,35 @@
-import { createUnitSchema, updateUnitSchema } from "../models/unit.schema.js";
 import { throwHttpError } from "../utils/errors.js";
 
 export const unitsService = {
-    prepareCreate(inputData, existingUnit) {
-        const payload =
-            typeof inputData === "string" ? { name: inputData } : inputData;
-        const parsed = createUnitSchema.parse(payload);
+    createUnit(name, existingUnit) {
+        const trimmedName =
+            typeof name === "string" ? name.trim() : name?.name?.trim() || "";
 
         if (existingUnit) {
-            throwHttpError(409, `Unit '${parsed.name}' already exists`);
+            throwHttpError(409, `Unit '${trimmedName}' already exists`);
         }
 
-        return { name: parsed.name };
+        return { name: trimmedName };
     },
 
-    prepareUpdate(oldName, inputData, existingTargetUnit) {
-        const payload =
-            typeof inputData === "string" ? { name: inputData } : inputData;
-        const parsed = updateUnitSchema.parse(payload);
+    updateUnit(oldName, newName, existingTargetUnit) {
+        const trimmedName =
+            typeof newName === "string"
+                ? newName.trim()
+                : newName?.name?.trim() || "";
 
-        if (parsed.name === oldName) {
-            return { name: parsed.name };
+        if (trimmedName === oldName) {
+            return { name: trimmedName };
         }
 
         if (existingTargetUnit) {
-            throwHttpError(409, `Unit '${parsed.name}' already exists`);
+            throwHttpError(409, `Unit '${trimmedName}' already exists`);
         }
 
-        return { name: parsed.name };
+        return { name: trimmedName };
     },
 
-    validateDelete(unitRecord, userCountInUnit = 0) {
+    deleteUnit(unitRecord, userCountInUnit = 0) {
         if (!unitRecord) {
             throwHttpError(404, "Unit not found");
         }
@@ -42,6 +41,3 @@ export const unitsService = {
         return true;
     },
 };
-
-unitsService.validateCreate = unitsService.prepareCreate;
-unitsService.validateUpdate = unitsService.prepareUpdate;
