@@ -1,32 +1,22 @@
 import { throwHttpError } from "../utils/errors.js";
 
 export const unitsService = {
-    createUnit(name, existingUnit) {
-        const trimmedName =
-            typeof name === "string" ? name.trim() : name?.name?.trim() || "";
-
+    validateExistingUnit(name, existingUnit) {
         if (existingUnit) {
-            throwHttpError(409, `Unit '${trimmedName}' already exists`);
+            throwHttpError(409, `Unit '${name}' already exists`);
         }
-
-        return { name: trimmedName };
     },
 
     updateUnit(oldName, newName, existingTargetUnit) {
-        const trimmedName =
-            typeof newName === "string"
-                ? newName.trim()
-                : newName?.name?.trim() || "";
-
-        if (trimmedName === oldName) {
-            return { name: trimmedName };
+        if (newName === oldName) {
+            return { name: newName };
         }
 
         if (existingTargetUnit) {
-            throwHttpError(409, `Unit '${trimmedName}' already exists`);
+            throwHttpError(409, `Unit '${newName}' already exists`);
         }
 
-        return { name: trimmedName };
+        return { name: newName };
     },
 
     deleteUnit(unitRecord, userCountInUnit = 0) {
@@ -35,7 +25,7 @@ export const unitsService = {
         }
 
         if (userCountInUnit > 0) {
-            throwHttpError(409, "Cannot delete unit with active members");
+            throwHttpError(400, "Cannot delete unit with active members");
         }
 
         return true;
