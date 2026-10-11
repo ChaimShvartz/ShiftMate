@@ -1,21 +1,29 @@
 import { usersRepo } from "../repositories/index.js";
+import { usersService } from "../services/users.service.js";
 
 export const setupController = {
-  async getStatus(_req, res) {
-    const admin = await usersRepo.getDocByField("role", "admin");
-    res.json({ initialized: Boolean(admin) });
-  },
+    async getStatus(_req, res) {
+        const admin = await usersRepo.getDocByField("role", "admin");
+        res.json({ success: true, data: { initialized: Boolean(admin) } });
+    },
 
-  async init(req, res) {
-    const existingAdmin = await usersRepo.getDocByField("role", "admin");
+    async init(req, res) {
+        const existingAdmin = await usersRepo.getDocByField("role", "admin");
 
-    const adminRecord = await usersService.createUser(req.body, {
-      existingAdmin: Boolean(existingAdmin),
-    });
+        const adminRecord = await usersService.createUser(
+            { ...req.body, role: "admin" },
+            {
+                existingAdmin: Boolean(existingAdmin),
+            },
+        );
 
-    await usersRepo.createDoc(adminRecord);
-    res
-      .status(201)
-      .json({ success: true, data: publishUser({ user: adminRecord }) });
-  },
+        const created = await usersRepo.createDoc(adminRecord);
+        const { password_hash, password, ...safeAdmin } =
+            created || adminRecord;
+
+        res.status(201).json({
+            success: true,
+            data: safeAdmin,
+        });
+    },
 };

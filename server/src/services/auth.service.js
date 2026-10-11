@@ -9,7 +9,7 @@ export const authService = {
             throwHttpError(404, "User not found");
         }
 
-        if (!await comparePassword(plainPassword, userRecord.password)) {
+        if (!(await comparePassword(plainPassword, userRecord.password))) {
             throwHttpError(401, "Invalid credentials");
         }
 

@@ -4,14 +4,15 @@ function formatId(doc) {
     if (!doc) return null;
     const { _id, ...rest } = doc;
     return {
-        id: _id.toString(),
+        _id,
+        id: _id ? _id.toString() : undefined,
         ...rest,
     };
 }
 
 export function createMongoRepo(getCollection) {
-    async function getAllDocs(filter = {}) {
-        const allDocs = await getCollection().find(filter).toArray();
+    async function getAllDocs(filter = {}, options = {}) {
+        const allDocs = await getCollection().find(filter, options).toArray();
         return allDocs.map(formatId);
     }
 
@@ -23,6 +24,15 @@ export function createMongoRepo(getCollection) {
     async function getDocByField(field, value) {
         const doc = await getCollection().findOne({ [field]: value });
         return formatId(doc);
+    }
+
+    async function findOne(filter = {}, options = {}) {
+        const doc = await getCollection().findOne(filter, options);
+        return formatId(doc);
+    }
+
+    async function countDocs(filter = {}) {
+        return await getCollection().countDocuments(filter);
     }
 
     async function createDoc(doc) {
@@ -58,6 +68,8 @@ export function createMongoRepo(getCollection) {
         getAllDocs,
         getDocById,
         getDocByField,
+        findOne,
+        countDocs,
         createDoc,
         deleteDoc,
         updateDoc,
