@@ -216,8 +216,19 @@ export const swapController = {
 
     async getBoard(req, res) {
         const unitName = req.user?.unitName;
+
+        const currentWeekDoc = await shiftWeeksRepo.findOne(
+            { unitName },
+            { sort: { weekNumber: -1 } },
+        );
+
+        if (!currentWeekDoc) {
+            return res.json({ success: true, data: [] });
+        }
+
         const swaps = await swapRequestsRepo.getAllDocs({
             unitName,
+            weekNumber: currentWeekDoc.weekNumber,
             status: "published_to_board",
         });
 
@@ -226,18 +237,10 @@ export const swapController = {
             users.map((u) => [u.employee_code, u]),
         );
 
-        const weekDocs = await shiftWeeksRepo.getAllDocs(
-            { unitName },
-            { sort: { weekNumber: -1 } },
-        );
-        const shiftWeeksMap = Object.fromEntries(
-            weekDocs.map((w) => [`${w.unitName}:${w.weekNumber}`, w]),
-        );
-
         const enriched = swapsService.enrichSwaps(
             swaps,
             usersMap,
-            shiftWeeksMap,
+            currentWeekDoc,
         );
         res.json({ success: true, data: enriched });
     },

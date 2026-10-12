@@ -199,18 +199,14 @@ export const swapsService = {
         };
     },
 
-    enrichSwaps(swapsList = [], usersMap = {}, shiftWeeksMap = {}) {
+    enrichSwaps(swapsList = [], usersMap = {}, weekDoc = null) {
         return swapsList.map((swap) => {
             const requester = usersMap[swap.requesterEmployeeCode] || null;
-            const weekDoc =
-                shiftWeeksMap[`${swap.unitName}:${swap.weekNumber}`] || null;
-            const shift = weekDoc
-                ? (weekDoc.shifts || []).find(
-                      (s) => String(s.id) === String(swap.shiftId),
-                  )
-                : null;
+            const shift = (weekDoc?.shifts || []).find(
+                (s) => s.id === swap.shiftId,
+            ) || null;
 
-            const enrichedApplicants = (swap.applicants || []).map((app) => ({
+            const enrichedApplicants = (swap.applicants).map((app) => ({
                 ...app,
                 employeeName:
                     usersMap[app.employeeCode]?.full_name || app.employeeCode,
@@ -221,7 +217,7 @@ export const swapsService = {
                 requesterName: requester
                     ? requester.full_name
                     : swap.requesterEmployeeCode,
-                shiftDetails: shift || null,
+                shiftDetails: shift,
                 applicants: enrichedApplicants,
             };
         });
