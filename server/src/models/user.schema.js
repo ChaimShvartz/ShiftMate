@@ -17,16 +17,14 @@ export const createUserSchema = z.object({
         .trim()
         .min(2, "Full name must be at least 2 characters"),
     phone: z.string().trim().min(6, "Phone must be at least 6 characters"),
-    email: z.email("Invalid email format"),
+    email: z.email("Invalid email format").toLowerCase(),
     password: z.string().min(6, "Password must be at least 6 characters"),
-    unitName: z.string().trim().min(1, "Unit name is required"),
+    unitName: z.string().trim().min(1).optional(),
     maxWeeklyHours: z
         .number()
         .int()
         .positive()
         .optional()
-        .nullable()
-        .default(40),
 });
 
 export const updateUserSchema = z.object({

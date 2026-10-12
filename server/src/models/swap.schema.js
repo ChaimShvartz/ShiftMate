@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createSwapRequestSchema = z.object({
     shiftId: z.union([z.string(), z.number()]),
-    reason: z.string().trim().default(""),
+    reason: z.string().trim(),
 });
 
 export const approveApplicantSchema = z.object({

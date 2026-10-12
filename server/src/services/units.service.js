@@ -11,10 +11,7 @@ export const unitsService = {
         if (newName === oldName) {
             return { name: newName };
         }
-
-        if (existingTargetUnit) {
-            throwHttpError(409, `Unit '${newName}' already exists`);
-        }
+        this.validateExistingUnit(newName, existingTargetUnit)
 
         return { name: newName };
     },

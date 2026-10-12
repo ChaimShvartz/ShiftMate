@@ -40,7 +40,7 @@ router.post(
 
 router.get(
     "/",
-    authorizeRole("manager", "employee", "admin", "superadmin"),
+    authorizeRole("manager", "employee"),
     shiftController.getShifts,
 );
 
