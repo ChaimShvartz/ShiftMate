@@ -5,6 +5,14 @@ import {
     usersRepo,
 } from "../repositories/index.js";
 import { swapsService } from "../services/swaps.service.js";
+import {
+    emitSwapApplicantRejected,
+    emitSwapApplied,
+    emitSwapApproved,
+    emitSwapCreated,
+    emitSwapPublished,
+    emitSwapRejected,
+} from "../sockets/swaps.socket.js";
 import { throwHttpError } from "../utils/errors.js";
 
 function toObjectId(id) {
@@ -46,6 +54,12 @@ export const swapController = {
             { $set: { "shifts.$.status": "swap_pending" } },
         );
 
+        emitSwapCreated(unitName, {
+            swapId: insertedId,
+            shiftId,
+            requesterEmployeeCode: req.user.employeeCode,
+        });
+
         res.status(201).json({
             success: true,
             data: {
@@ -61,6 +75,11 @@ export const swapController = {
         const updates = swapsService.publishSwap(swapDoc, req.user?.unitName);
 
         await swapRequestsRepo.updateDoc(id, updates);
+
+        emitSwapPublished(swapDoc.unitName, {
+            swapId: id,
+            shiftId: swapDoc.shiftId,
+        });
 
         res.json({
             success: true,
@@ -84,6 +103,10 @@ export const swapController = {
                 },
                 { $set: { "shifts.$.status": "scheduled" } },
             );
+
+            emitSwapRejected(swapDoc.unitName, swapDoc.requesterEmployeeCode, {
+                swapId: id,
+            });
         }
 
         res.json({
@@ -102,6 +125,11 @@ export const swapController = {
 
         await swapRequestsRepo.updateDoc(id, {
             applicants: updatedApplicants,
+        });
+
+        emitSwapApplied(swapDoc.unitName, {
+            swapId: id,
+            applicantEmployeeCode: req.user.employeeCode,
         });
 
         res.json({
@@ -145,6 +173,13 @@ export const swapController = {
             },
         );
 
+        emitSwapApproved({
+            unitName: swapDoc.unitName,
+            approvedEmployeeCode: applicantCode,
+            requesterEmployeeCode: swapDoc.requesterEmployeeCode,
+            swapId: id,
+        });
+
         res.json({
             success: true,
             data: {
@@ -165,6 +200,8 @@ export const swapController = {
             },
             { $set: { "applicants.$.status": "rejected" } },
         );
+
+        emitSwapApplicantRejected(employeeCode, { swapId: id });
 
         res.json({
             success: true,
