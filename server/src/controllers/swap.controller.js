@@ -254,11 +254,11 @@ export const swapController = {
             unitName: swapDoc.unitName,
             weekNumber: swapDoc.weekNumber,
         });
-        const targetShift = (shiftWeek?.shifts || []).find(
-            (s) => String(s.id) === String(swapDoc.shiftId),
+        const targetShift = (shiftWeek?.shifts).find(
+            (s) => s.id === swapDoc.shiftId,
         );
 
-        const employeeShifts = (shiftWeek?.shifts || []).filter(
+        const employeeShifts = (shiftWeek?.shifts).filter(
             (s) => s.assignedEmployeeCode === employeeCode,
         );
 
@@ -270,7 +270,7 @@ export const swapController = {
         const compliance = complianceService.checkLaborRules({
             targetShift,
             employeeExistingShifts: employeeShifts,
-            maxWeeklyHours: employeeUser?.max_weekly_hours || 40,
+            maxWeeklyHours: employeeUser.max_weekly_hours,
         });
 
         res.json({
