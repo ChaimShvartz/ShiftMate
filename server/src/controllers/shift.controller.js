@@ -2,191 +2,164 @@ import { shiftWeeksRepo, usersRepo } from "../repositories/index.js";
 import { excelService } from "../services/excel.service.js";
 import { shiftsService } from "../services/shifts.service.js";
 import {
-  emitShiftCreated,
-  emitShiftDeleted,
-  emitShiftUpdated,
+    emitShiftCreated,
+    emitShiftDeleted,
+    emitShiftUpdated,
 } from "../sockets/shifts.socket.js";
 import { throwHttpError } from "../utils/errors.js";
 
 export const shiftController = {
-  async getShifts(req, res) {
-    const { unitName } = req.user;
-    const { weekNumber } = req.query;
-    const filter = { unitName };
-    if (weekNumber) filter.weekNumber = Number(weekNumber);
+    async getShifts(req, res) {
+        const { unitName } = req.user;
+        const { weekNumber } = req.query;
+        const filter = { unitName };
+        if (weekNumber) filter.weekNumber = Number(weekNumber);
 
-    const weekDoc = await shiftWeeksRepo.findOne(filter, {
-      sort: { weekNumber: -1 },
-    });
+        const weekDoc = await shiftWeeksRepo.findOne(filter, {
+            sort: { weekNumber: -1 },
+        });
 
-    const filtered = shiftsService.filterUserShifts(weekDoc, req.user);
-    res.json({
-      success: true,
-      data: filtered || {
-        unitName: unitName,
-        weekNumber: weekNumber || null,
-        shifts: [],
-      },
-    });
-  },
+        const filtered = shiftsService.filterUserShifts(weekDoc, req.user);
+        res.json({
+            success: true,
+            data: filtered || {
+                unitName: unitName,
+                weekNumber: weekNumber || null,
+                shifts: [],
+            },
+        });
+    },
 
-  //   async createWeek(req, res) {
-  //     const unitName = req.user?.unitName
+    async updateShift(req, res) {
+        const { weekNumber, shiftId } = req.params;
+        const unitName = req.user?.unitName;
 
-  //     const latestWeekDoc = await shiftWeeksRepo.findOne(
-  //       { unitName },
-  //       { sort: { weekNumber: -1 } },
-  //     );
+        const filter = {
+            weekNumber: Number(weekNumber),
+            unitName,
+        };
 
-  //     const weekData = shiftsService.createWeek(
-  //       { ...req.body, unitName },
-  //       latestWeekDoc,
-  //     );
+        const weekDoc = await shiftWeeksRepo.findOne(filter);
+        const shift = shiftsService.updateShift(weekDoc, shiftId, req.body);
 
-  //     const insertedId = await shiftWeeksRepo.createDoc(weekData);
+        const updateQuery = {};
+        for (const [key, val] of Object.entries(req.body)) {
+            updateQuery[`shifts.$.${key}`] = val;
+        }
 
-  //     emitShiftCreated(unitName, {
-  //       weekNumber: weekData.weekNumber,
-  //       unitName,
-  //     });
+        await shiftWeeksRepo.updateOne(
+            {
+                _id: weekDoc._id,
+                "shifts.id": shift.id,
+            },
+            { $set: updateQuery },
+        );
 
-  //     res.status(201).json({
-  //       success: true,
-  //       data: {
-  //         _id: insertedId,
-  //         ...weekData,
-  //       },
-  //     });
-  //   },
+        emitShiftUpdated(unitName, {
+            weekNumber: Number(weekNumber),
+            shiftId,
+        });
 
-  async updateShift(req, res) {
-    const { weekNumber, shiftId } = req.params;
-    const unitName = req.user?.unitName;
+        res.json({
+            success: true,
+            data: {
+                ...shift,
+                ...req.body,
+            },
+        });
+    },
 
-    const filter = {
-      weekNumber: Number(weekNumber),
-      unitName,
-    };
+    async deleteShift(req, res) {
+        const { weekNumber, shiftId } = req.params;
+        const unitName = req.user?.unitName;
 
-    const weekDoc = await shiftWeeksRepo.findOne(filter);
-    const shift = shiftsService.updateShift(weekDoc, shiftId, req.body);
+        const filter = {
+            weekNumber: Number(weekNumber),
+            unitName,
+        };
 
-    const updateQuery = {};
-    for (const [key, val] of Object.entries(req.body)) {
-      updateQuery[`shifts.$.${key}`] = val;
-    }
+        const weekDoc = await shiftWeeksRepo.findOne(filter);
+        if (!weekDoc) throwHttpError(404, "Week not found");
 
-    await shiftWeeksRepo.updateOne(
-      {
-        _id: weekDoc._id,
-        "shifts.id": shift.id,
-      },
-      { $set: updateQuery },
-    );
+        await shiftWeeksRepo.updateOne(
+            { _id: weekDoc._id },
+            { $pull: { shifts: { id: Number(shiftId) } } },
+        );
 
-    emitShiftUpdated(unitName, {
-      weekNumber: Number(weekNumber),
-      shiftId,
-    });
+        emitShiftDeleted(unitName, {
+            weekNumber: Number(weekNumber),
+            shiftId,
+        });
 
-    res.json({
-      success: true,
-      data: {
-        ...shift,
-        ...req.body,
-      },
-    });
-  },
+        res.json({
+            success: true,
+            deleted: { weekNumber, shiftId },
+        });
+    },
 
-  async deleteShift(req, res) {
-    const { weekNumber, shiftId } = req.params;
-    const unitName = req.user?.unitName;
+    async getImportTemplate(req, res) {
+        const unitName = req.user?.unitName;
 
-    const filter = {
-      weekNumber: Number(weekNumber),
-      unitName,
-    };
+        const employees = await usersRepo.getAllDocs({
+            unit_name: unitName,
+            role: "employee",
+        });
 
-    const weekDoc = await shiftWeeksRepo.findOne(filter);
-    if (!weekDoc) throwHttpError(404, "Week not found");
+        const buffer = await excelService.buildTemplate(employees);
 
-    await shiftWeeksRepo.updateOne(
-      { _id: weekDoc._id },
-      { $pull: { shifts: { id: Number(shiftId)} } },
-    );
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        );
+        res.setHeader(
+            "Content-Disposition",
+            'attachment; filename="shifts_template.xlsx"',
+        );
+        res.send(buffer);
+    },
 
-    emitShiftDeleted(unitName, {
-      weekNumber: Number(weekNumber),
-      shiftId,
-    });
+    async importShifts(req, res) {
+        const unitName = req.user?.unitName;
 
-    res.json({
-      success: true,
-      deleted: { weekNumber, shiftId },
-    });
-  },
+        if (!req.body || (Buffer.isBuffer(req.body) && req.body.length === 0)) {
+            throwHttpError(400, "Please upload a valid Excel file");
+        }
 
-  async getImportTemplate(req, res) {
-    const unitName = req.user?.unitName;
+        const buffer = Buffer.isBuffer(req.body)
+            ? req.body
+            : Buffer.from(req.body);
 
-    const employees = await usersRepo.getAllDocs({
-      unit_name: unitName,
-      role: "employee",
-    });
+        const employees = await usersRepo.getAllDocs({
+            unit_name: unitName,
+            role: "employee",
+        });
 
-    const buffer = await excelService.buildTemplate(employees);
+        const rows = await excelService.parseShiftsFile(buffer);
+        const parsedShifts = excelService.validateShiftRows(rows, employees);
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    res.setHeader(
-      "Content-Disposition",
-      'attachment; filename="shifts_template.xlsx"',
-    );
-    res.send(buffer);
-  },
+        const latestWeekDoc = await shiftWeeksRepo.findOne(
+            { unitName },
+            { sort: { weekNumber: -1 } },
+        );
 
-  async importShifts(req, res) {
-    const unitName = req.user?.unitName;
+        const weekData = shiftsService.createWeek(
+            { unitName, shifts: parsedShifts },
+            latestWeekDoc,
+        );
 
-    if (!req.body || (Buffer.isBuffer(req.body) && req.body.length === 0)) {
-      throwHttpError(400, "Please upload a valid Excel file");
-    }
+        const insertedId = await shiftWeeksRepo.createDoc(weekData);
 
-    const buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
+        emitShiftCreated(unitName, {
+            weekNumber: weekData.weekNumber,
+            unitName,
+        });
 
-    const employees = await usersRepo.getAllDocs({
-      unit_name: unitName,
-      role: "employee",
-    });
-
-    const rows = await excelService.parseShiftsFile(buffer);
-    const parsedShifts = excelService.validateShiftRows(rows, employees);
-
-    const latestWeekDoc = await shiftWeeksRepo.findOne(
-      { unitName },
-      { sort: { weekNumber: -1 } },
-    );
-
-    const weekData = shiftsService.createWeek(
-      { unitName, shifts: parsedShifts },
-      latestWeekDoc,
-    );
-
-    const insertedId = await shiftWeeksRepo.createDoc(weekData);
-
-    emitShiftCreated(unitName, {
-      weekNumber: weekData.weekNumber,
-      unitName,
-    });
-
-    res.status(201).json({
-      success: true,
-      data: {
-        id: insertedId,
-        ...weekData,
-      },
-    });
-  },
+        res.status(201).json({
+            success: true,
+            data: {
+                id: insertedId,
+                ...weekData,
+            },
+        });
+    },
 };

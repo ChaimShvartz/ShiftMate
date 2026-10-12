@@ -11,7 +11,7 @@ export const unitsService = {
         if (newName === oldName) {
             return { name: newName };
         }
-        this.validateExistingUnit(newName, existingTargetUnit)
+        this.validateExistingUnit(newName, existingTargetUnit);
 
         return { name: newName };
     },

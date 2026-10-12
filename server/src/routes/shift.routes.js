@@ -2,10 +2,7 @@ import express, { Router } from "express";
 import { shiftController } from "../controllers/shift.controller.js";
 import { authenticate, authorizeRole } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
-import {
-    createShiftWeekSchema,
-    updateShiftSchema,
-} from "../models/shift.schema.js";
+import { updateShiftSchema } from "../models/shift.schema.js";
 
 const router = Router();
 
@@ -29,13 +26,6 @@ router.post(
         limit: "10mb",
     }),
     shiftController.importShifts,
-);
-
-router.post(
-    "/",
-    authorizeRole("manager"),
-    validate(createShiftWeekSchema),
-    shiftController.createWeek,
 );
 
 router.get(

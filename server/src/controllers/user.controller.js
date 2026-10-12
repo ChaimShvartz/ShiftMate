@@ -4,120 +4,140 @@ import { publishUser } from "../utils/auth.js";
 import { throwHttpError } from "../utils/errors.js";
 
 export const userController = {
-  async getAllUsers(req, res) {
-    const { unitName, role } = req.query;
-    const filter = {};
-    if (unitName) filter.unit_name = unitName;
-    if (role) filter.role = role;
+    async getAllUsers(req, res) {
+        const { unitName, role } = req.query;
+        const filter = {};
 
-    const users = await usersRepo.getAllDocs(filter);
-    const safeUsers = users.map(publishUser);
-    res.json({ success: true, data: safeUsers });
-  },
+        if (req.user?.role === "manager") {
+            filter.unit_name = req.user.unitName;
+            filter.role = "employee";
+        } else {
+            if (unitName) filter.unit_name = unitName;
+            if (role) filter.role = role;
+        }
 
-  async createUser(req, res) {
-    const { unitName, email, role } = req.body;
+        const users = await usersRepo.getAllDocs(filter);
+        const safeUsers = users.map(publishUser);
+        res.json({ success: true, data: safeUsers });
+    },
 
-    if (role === "admin") throwHttpError(409, "Admin already exists");
+    async createUser(req, res) {
+        const { unitName, email, role } = req.body;
 
-    let existingManagerInUnit = null;
-    if (role === "manager" && unitName) {
-      const managers = await usersRepo.getAllDocs({
-        unit_name: unitName,
-        role: "manager",
-      });
-      existingManagerInUnit = managers.length > 0;
-    }
+        if (role === "admin") throwHttpError(409, "Admin already exists");
 
-    const existingEmailUser = await usersRepo.getDocByField("email", email);
+        let existingManagerInUnit = null;
+        if (role === "manager" && unitName) {
+            const managers = await usersRepo.getAllDocs({
+                unit_name: unitName,
+                role: "manager",
+            });
+            existingManagerInUnit = managers.length > 0;
+        }
 
-    const userRecord = await usersService.createUser(req.body, {
-      existingManagerInUnit,
-      existingEmailUser,
-    });
+        const existingEmailUser = await usersRepo.getDocByField("email", email);
 
-    const created = await usersRepo.createDoc(userRecord);
-    const safeUser = publishUser(created);
-    res.status(201).json({ success: true, data: safeUser });
-  },
+        const userRecord = await usersService.createUser(req.body, {
+            existingManagerInUnit,
+            existingEmailUser,
+        });
 
-  async updateMe(req, res) {
-    const employeeCode = req.user?.employeeCode;
-    if (!employeeCode) throwHttpError(401, "Unauthorized");
+        const created = await usersRepo.createDoc(userRecord);
+        const safeUser = publishUser(created);
+        res.status(201).json({ success: true, data: safeUser });
+    },
 
-    const currentUser = await usersRepo.getDocByField(
-      "employee_code",
-      employeeCode,
-    );
-    if (!currentUser) throwHttpError(404, "User not found");
+    async updateMe(req, res) {
+        const employeeCode = req.user?.employeeCode;
+        if (!employeeCode) throwHttpError(401, "Unauthorized");
 
-    const updated = await usersRepo.updateDoc(
-      "employee_code",
-      employeeCode,
-      req.body,
-    );
-    const safeUser = publishUser(updated);
-    res.json({ success: true, data: safeUser });
-  },
+        const currentUser = await usersRepo.getDocByField(
+            "employee_code",
+            employeeCode,
+        );
+        const updates = await usersService.updateUser(currentUser, req.body);
 
-  async updateUser(req, res) {
-    const { employeeCode } = req.params;
-    const existingUser = await usersRepo.getDocByField(
-      "employee_code",
-      employeeCode,
-    );
+        const updated = await usersRepo.updateDoc(
+            "employee_code",
+            employeeCode,
+            updates,
+        );
+        const safeUser = publishUser(updated);
+        res.json({ success: true, data: safeUser });
+    },
 
-    const updates = await usersService.updateUser(existingUser, req.body);
-    const updated = await usersRepo.updateDoc(
-      "employee_code",
-      employeeCode,
-      updates,
-    );
-    const safeUser = publishUser(updated);
-    res.json({ success: true, data: safeUser });
-  },
+    async updateUser(req, res) {
+        const { employeeCode } = req.params;
+        const existingUser = await usersRepo.getDocByField(
+            "employee_code",
+            employeeCode,
+        );
 
-  async deleteUser(req, res) {
-    const { employeeCode } = req.params;
-    const userRecord = await usersRepo.getDocByField(
-      "employee_code",
-      employeeCode,
-    );
-    const shiftWeek = await shiftWeeksRepo.findOne({
-      "shifts.assignedEmployeeCode": employeeCode,
-    });
+        const updates = await usersService.updateUser(existingUser, req.body);
+        const updated = await usersRepo.updateDoc(
+            "employee_code",
+            employeeCode,
+            updates,
+        );
+        const safeUser = publishUser(updated);
+        res.json({ success: true, data: safeUser });
+    },
 
-    usersService.deleteUser(userRecord, {
-      hasActiveShifts: Boolean(shiftWeek),
-    });
+    async deleteUser(req, res) {
+        const { employeeCode } = req.params;
+        const userRecord = await usersRepo.getDocByField(
+            "employee_code",
+            employeeCode,
+        );
+        if (!userRecord) throwHttpError(404, "User not found");
 
-    await usersRepo.deleteDoc("employee_code", employeeCode);
-    const deleted = { employeeCode, name: userRecord.full_name };
-    res.json({ success: true, deleted });
-  },
+        let hasActiveShifts = false;
+        if (userRecord.unit_name) {
+            const latestWeek = await shiftWeeksRepo.findOne(
+                { unitName: userRecord.unit_name },
+                { sort: { weekNumber: -1 } },
+            );
+            if (latestWeek?.shifts) {
+                hasActiveShifts = latestWeek.shifts.some(
+                    (s) => s.assignedEmployeeCode === employeeCode,
+                );
+            }
+        }
 
-  async replaceManager(req, res) {
-    const { employeeCode } = req.params;
-    const currentManager = await usersRepo.getDocByField(
-      "employee_code",
-      employeeCode,
-    );
+        usersService.deleteUser(userRecord, {
+            hasActiveShifts,
+        });
 
-    const { oldEmployeeCode, newManagerDoc } =
-      await usersService.replaceManager(currentManager, req.body);
+        await usersRepo.deleteDoc("employee_code", employeeCode);
+        const deleted = { employeeCode, name: userRecord.full_name };
+        res.json({ success: true, deleted });
+    },
 
-    await usersRepo.deleteDoc("employee_code", oldEmployeeCode);
-    const created = await usersRepo.createDoc(newManagerDoc);
+    async replaceManager(req, res) {
+        const { employeeCode } = req.params;
+        const currentManager = await usersRepo.getDocByField(
+            "employee_code",
+            employeeCode,
+        );
 
-    const safeManager = publishUser(created);
-    const replacedManager = { employeeCode, name: currentManager.full_name };
+        const { oldEmployeeCode, newManagerDoc } =
+            await usersService.replaceManager(currentManager, req.body);
 
-    res.json({
-      success: true,
-      data: {
-        replacedManager,
-        newManager: safeManager,
-      },
-    });
-  },
+        await usersRepo.deleteDoc("employee_code", oldEmployeeCode);
+        const created = await usersRepo.createDoc(newManagerDoc);
+
+        const safeManager = publishUser(created);
+        const replacedManager = {
+            employeeCode,
+            name: currentManager.full_name,
+        };
+
+        res.json({
+            success: true,
+            data: {
+                replacedManager,
+                newManager: safeManager,
+            },
+        });
+    },
 };

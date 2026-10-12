@@ -3,8 +3,8 @@ import { swapController } from "../controllers/swap.controller.js";
 import { authenticate, authorizeRole } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
 import {
-  createSwapRequestSchema,
-  approveApplicantSchema,
+    approveApplicantSchema,
+    createSwapRequestSchema,
 } from "../models/swap.schema.js";
 
 const router = Router();
@@ -12,59 +12,55 @@ const router = Router();
 router.use(authenticate);
 
 router.get(
-  "/board",
-  authorizeRole("manager", "employee"),
-  swapController.getBoard,
+    "/board",
+    authorizeRole("manager", "employee"),
+    swapController.getBoard,
 );
 
 router.post(
-  "/",
-  authorizeRole("employee"),
-  validate(createSwapRequestSchema),
-  swapController.createSwap,
+    "/",
+    authorizeRole("employee"),
+    validate(createSwapRequestSchema),
+    swapController.createSwap,
 );
 
 router.patch(
-  "/:id/publish",
-  authorizeRole("manager"),
-  swapController.publishSwap,
+    "/:id/publish",
+    authorizeRole("manager"),
+    swapController.publishSwap,
 );
 
 router.patch(
-  "/:id/reject",
-  authorizeRole("manager"),
-  swapController.rejectSwap,
+    "/:id/reject",
+    authorizeRole("manager"),
+    swapController.rejectSwap,
 );
 
-router.post(
-  "/:id/apply",
-  authorizeRole("employee"),
-  swapController.applySwap,
-);
+router.post("/:id/apply", authorizeRole("employee"), swapController.applySwap);
 
 router.get(
-  "/:id/compliance/:employeeCode",
-  authorizeRole("manager"),
-  swapController.getCompliance,
+    "/:id/compliance/:employeeCode",
+    authorizeRole("manager"),
+    swapController.getCompliance,
 );
 
 router.patch(
-  "/:id/applicants/:employeeCode/approve",
-  authorizeRole("manager"),
-  swapController.approveApplicant,
+    "/:id/applicants/:employeeCode/approve",
+    authorizeRole("manager"),
+    swapController.approveApplicant,
 );
 
 router.patch(
-  "/:id/approve",
-  authorizeRole("manager"),
-  validate(approveApplicantSchema),
-  swapController.approveApplicant,
+    "/:id/approve",
+    authorizeRole("manager"),
+    validate(approveApplicantSchema),
+    swapController.approveApplicant,
 );
 
 router.patch(
-  "/:id/applicants/:employeeCode/reject",
-  authorizeRole("manager"),
-  swapController.rejectApplicant,
+    "/:id/applicants/:employeeCode/reject",
+    authorizeRole("manager"),
+    swapController.rejectApplicant,
 );
 
 export default router;

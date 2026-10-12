@@ -17,8 +17,9 @@ export async function comparePassword(plainPassword, hash) {
     return await bcrypt.compare(plainPassword, hash);
 }
 
-export const publishUser = ({ user } = {}) => {
-    if (!user) return null;
+export const publishUser = (userObj) => {
+    if (!userObj) return null;
+    const user = userObj.user || userObj;
     const { password, ...rest } = user;
     return rest;
 };

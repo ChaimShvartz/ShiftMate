@@ -1,10 +1,10 @@
 import { Router } from "express";
-import setupRoutes from "./setup.routes.js";
 import authRoutes from "./auth.routes.js";
-import unitRoutes from "./unit.routes.js";
-import userRoutes from "./user.routes.js";
+import setupRoutes from "./setup.routes.js";
 import shiftRoutes from "./shift.routes.js";
 import swapRoutes from "./swap.routes.js";
+import unitRoutes from "./unit.routes.js";
+import userRoutes from "./user.routes.js";
 
 const apiRouter = Router();
 

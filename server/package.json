@@ -1,24 +1,25 @@
 {
-  "name": "server",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --watch --env-file=.env ../server/src/index.js"
-  },
-  "keywords": [],
-  "license": "ISC",
-  "type": "module",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.117.3",
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.6",
-    "exceljs": "^4.4.0",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "mongodb": "^7.7.0",
-    "socket.io": "^4.8.4",
-    "zod": "^4.6.5"
-  }
+    "name": "server",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node --watch --env-file=.env ../server/src/index.js"
+    },
+    "keywords": [],
+    "license": "ISC",
+    "type": "module",
+    "dependencies": {
+        "@supabase/supabase-js": "^2.117.3",
+        "bcrypt": "^6.0.0",
+        "cors": "^2.8.6",
+        "exceljs": "^4.4.0",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "mongodb": "^7.7.0",
+        "pg": "^8.23.1",
+        "socket.io": "^4.8.4",
+        "zod": "^4.6.5"
+    }
 }
