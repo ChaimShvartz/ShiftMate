@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { updateMe } from "../api/users";
 import { useAuthStore } from "../store/authStore";
-import { getErrorMessage } from "../utils/getErrorMessage";
 import { getRoleLabel } from "../utils/formatters";
+import { getErrorMessage } from "../utils/getErrorMessage";
 
 interface FormState {
     fullName: string;
@@ -98,10 +98,39 @@ export default function ProfilePage() {
                     {user?.fullName?.[0]?.toUpperCase() ?? "?"}
                 </div>
                 <h1 className="profile-card__name">{user?.fullName}</h1>
-                <span className="profile-card__role">{getRoleLabel(user?.role)}</span>
-                {user?.unitName && (
-                    <span className="profile-card__unit">📍 {user.unitName}</span>
-                )}
+                <div className="profile-meta-badges">
+                    <span className="profile-card__role">
+                        {getRoleLabel(user?.role)}
+                    </span>
+                    {user?.employeeCode && (
+                        <span className="profile-card__code">
+                            #{user.employeeCode}
+                        </span>
+                    )}
+                    {user?.role === "admin" && (
+                        <span className="profile-card__badge-admin">
+                            🌐 ניהול כלל המערכת
+                        </span>
+                    )}
+                    {user?.role === "manager" && user?.unitName && (
+                        <span className="profile-card__unit">
+                            📍 מנהל יחידת {user.unitName}
+                        </span>
+                    )}
+                    {user?.role === "employee" && (
+                        <>
+                            {user?.unitName && (
+                                <span className="profile-card__unit">
+                                    📍 יחידת {user.unitName}
+                                </span>
+                            )}
+                            <span className="profile-card__hours">
+                                ⏱️ מכסת שעות שבועית:{" "}
+                                {user?.maxWeeklyHours || 40} שעות
+                            </span>
+                        </>
+                    )}
+                </div>
 
                 <form className="profile-form" onSubmit={handleSubmit}>
                     <h2 className="profile-form__title">עריכת פרופיל</h2>
@@ -141,7 +170,9 @@ export default function ProfilePage() {
                         />
                     </label>
 
-                    <div className="profile-form__divider">שינוי סיסמה (אופציונלי)</div>
+                    <div className="profile-form__divider">
+                        שינוי סיסמה (אופציונלי)
+                    </div>
 
                     <div className="profile-form__row">
                         <label className="profile-form__label">
@@ -171,7 +202,9 @@ export default function ProfilePage() {
 
                     {error && <p className="profile-form__error">{error}</p>}
                     {success && (
-                        <p className="profile-form__success">✅ הפרופיל עודכן בהצלחה!</p>
+                        <p className="profile-form__success">
+                            ✅ הפרופיל עודכן בהצלחה!
+                        </p>
                     )}
 
                     <button
@@ -186,4 +219,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-

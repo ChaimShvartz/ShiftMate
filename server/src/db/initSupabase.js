@@ -18,10 +18,33 @@ CREATE TABLE IF NOT EXISTS users (
     password TEXT NOT NULL,
     unit_name TEXT REFERENCES units(name) ON UPDATE CASCADE ON DELETE SET NULL,
     max_weekly_hours INTEGER,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT check_user_role_attributes CHECK (
+        (role = 'admin' AND unit_name IS NULL AND max_weekly_hours IS NULL) OR
+        (role = 'manager' AND unit_name IS NOT NULL AND max_weekly_hours IS NULL) OR
+        (role = 'employee' AND unit_name IS NOT NULL AND (max_weekly_hours IS NULL OR max_weekly_hours > 0))
+    )
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_unit_name ON users(unit_name);
+
+-- Align existing rows if initialized previously
+UPDATE users SET unit_name = NULL, max_weekly_hours = NULL WHERE role = 'admin';
+UPDATE users SET max_weekly_hours = NULL WHERE role = 'manager';
+
+-- Ensure constraint is present on existing tables
+DO $$
+BEGIN
+    ALTER TABLE users DROP CONSTRAINT IF EXISTS check_user_role_attributes;
+    ALTER TABLE users ADD CONSTRAINT check_user_role_attributes CHECK (
+        (role = 'admin' AND unit_name IS NULL AND max_weekly_hours IS NULL) OR
+        (role = 'manager' AND unit_name IS NOT NULL AND max_weekly_hours IS NULL) OR
+        (role = 'employee' AND unit_name IS NOT NULL AND (max_weekly_hours IS NULL OR max_weekly_hours > 0))
+    );
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL;
+END $$;
 `;
 
 export async function initSupabaseSchema() {

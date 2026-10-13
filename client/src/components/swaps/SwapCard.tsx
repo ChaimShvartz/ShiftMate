@@ -21,7 +21,11 @@ function formatTime(iso: string) {
     });
 }
 
-export default function SwapCard({ swap, currentEmployeeCode, onApply }: Props) {
+export default function SwapCard({
+    swap,
+    currentEmployeeCode,
+    onApply,
+}: Props) {
     const alreadyApplied = swap.applicants.some(
         (a) => a.employeeCode === currentEmployeeCode,
     );

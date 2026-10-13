@@ -56,7 +56,9 @@ export default function MyShiftsPage() {
             {loading && <p className="page__loading">טוען משמרות...</p>}
 
             {!loading && myShifts.length === 0 && (
-                <p className="page__empty">אין משמרות משובצות עבור השבוע הנוכחי.</p>
+                <p className="page__empty">
+                    אין משמרות משובצות עבור השבוע הנוכחי.
+                </p>
             )}
 
             <div className="shifts-grid">

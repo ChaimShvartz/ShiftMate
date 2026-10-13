@@ -9,7 +9,6 @@ interface SetupPageState {
     loading: boolean;
     error: string | null;
     createdAdminCode: string | null;
-    createdUnitName: string;
 }
 
 const SetupPage = () => {
@@ -17,7 +16,6 @@ const SetupPage = () => {
         loading: false,
         error: null,
         createdAdminCode: null,
-        createdUnitName: "",
     });
 
     const navigate = useNavigate();
@@ -26,7 +24,6 @@ const SetupPage = () => {
         fullName: string;
         phone: string;
         email: string;
-        unitName: string;
         password: string;
     }) => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
@@ -36,7 +33,6 @@ const SetupPage = () => {
             setState((prev) => ({
                 ...prev,
                 loading: false,
-                createdUnitName: data.unitName,
                 createdAdminCode: admin.employeeCode,
             }));
         } catch (err) {
@@ -53,7 +49,6 @@ const SetupPage = () => {
             {state.createdAdminCode ? (
                 <SetupSuccess
                     adminCode={state.createdAdminCode}
-                    unitName={state.createdUnitName}
                     onLoginClick={() =>
                         navigate("/login", {
                             state: { employeeCode: state.createdAdminCode },

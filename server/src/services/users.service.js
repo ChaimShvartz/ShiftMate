@@ -31,7 +31,8 @@ export const usersService = {
             phone: userData.phone,
             email: userData.email,
             password: password_hash,
-            unit_name: userData.unitName,
+            unit_name:
+                userData.role === "admin" ? null : userData.unitName || null,
             max_weekly_hours:
                 userData.role === "employee"
                     ? userData.maxWeeklyHours || 40
@@ -43,10 +44,32 @@ export const usersService = {
         if (!existingUser) {
             throwHttpError(404, "User not found");
         }
+
+        const dbUpdates = {};
+        if (updates.fullName !== undefined)
+            dbUpdates.full_name = updates.fullName;
+        if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+        if (updates.email !== undefined) dbUpdates.email = updates.email;
         if (updates.password) {
-            updates.password = await hashPassword(updates.password);
+            dbUpdates.password = await hashPassword(updates.password);
         }
-        return updates;
+
+        if (existingUser.role === "admin") {
+            dbUpdates.unit_name = null;
+            dbUpdates.max_weekly_hours = null;
+        } else if (existingUser.role === "manager") {
+            if (updates.unitName !== undefined)
+                dbUpdates.unit_name = updates.unitName;
+            dbUpdates.max_weekly_hours = null;
+        } else if (existingUser.role === "employee") {
+            if (updates.unitName !== undefined)
+                dbUpdates.unit_name = updates.unitName;
+            if (updates.maxWeeklyHours !== undefined) {
+                dbUpdates.max_weekly_hours = updates.maxWeeklyHours || 40;
+            }
+        }
+
+        return dbUpdates;
     },
 
     deleteUser(userRecord, { hasActiveShifts } = {}) {

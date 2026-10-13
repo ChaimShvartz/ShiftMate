@@ -24,15 +24,23 @@ export default function ShiftCard({ shift, onRequestSwap }: Props) {
     const isSwapPending = shift.status === "swap_pending";
 
     return (
-        <div className={`shift-card ${isSwapPending ? "shift-card--pending" : ""}`}>
+        <div
+            className={`shift-card ${isSwapPending ? "shift-card--pending" : ""}`}
+        >
             <div className="shift-card__header">
-                <span className="shift-card__title">{shift.title || "משמרת"}</span>
-                <span className={`shift-card__badge shift-card__badge--${shift.status}`}>
+                <span className="shift-card__title">
+                    {shift.title || "משמרת"}
+                </span>
+                <span
+                    className={`shift-card__badge shift-card__badge--${shift.status}`}
+                >
                     {isSwapPending ? "ממתין להחלפה" : "משובץ"}
                 </span>
             </div>
             <div className="shift-card__time">
-                <span className="shift-card__date">{formatDate(shift.startTime)}</span>
+                <span className="shift-card__date">
+                    {formatDate(shift.startTime)}
+                </span>
                 <span className="shift-card__range">
                     {formatTime(shift.startTime)} – {formatTime(shift.endTime)}
                 </span>

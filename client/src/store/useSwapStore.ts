@@ -25,7 +25,10 @@ interface SwapState {
     applySwap: (id: string) => Promise<void>;
     approveApplicant: (swapId: string, employeeCode: string) => Promise<void>;
     rejectApplicant: (swapId: string, employeeCode: string) => Promise<void>;
-    fetchCompliance: (swapId: string, employeeCode: string) => Promise<ComplianceResult>;
+    fetchCompliance: (
+        swapId: string,
+        employeeCode: string,
+    ) => Promise<ComplianceResult>;
     addToast: (message: string, type?: ToastMessage["type"]) => void;
     removeToast: (id: string) => void;
 }
@@ -56,7 +59,10 @@ export const useSwapStore = create<SwapState>((set, get) => ({
             get().addToast("הוגשה מועמדות חדשה להחלפה", "info");
         });
         socket.on("swap:approved", (data: { approvedEmployeeCode: string }) => {
-            get().addToast(`ההחלפה אושרה עבור עובד ${data.approvedEmployeeCode}`, "success");
+            get().addToast(
+                `ההחלפה אושרה עבור עובד ${data.approvedEmployeeCode}`,
+                "success",
+            );
             get().fetchBoard();
         });
         socket.on("swap:applicant_rejected", () => {
@@ -133,7 +139,10 @@ export const useSwapStore = create<SwapState>((set, get) => ({
     fetchCompliance: async (swapId, employeeCode) => {
         const result = await swapsApi.getCompliance(swapId, employeeCode);
         set((state) => ({
-            compliance: { ...state.compliance, [`${swapId}:${employeeCode}`]: result },
+            compliance: {
+                ...state.compliance,
+                [`${swapId}:${employeeCode}`]: result,
+            },
         }));
         return result;
     },

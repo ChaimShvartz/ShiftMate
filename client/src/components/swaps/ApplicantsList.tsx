@@ -47,13 +47,17 @@ export default function ApplicantsList({
                                 className="applicant-item__compliance"
                                 title={result.details}
                             >
-                                {COMPLIANCE_ICON[result.status]} {result.details}
+                                {COMPLIANCE_ICON[result.status]}{" "}
+                                {result.details}
                             </span>
                         ) : (
                             <button
                                 className="applicant-item__check-btn"
                                 onClick={() =>
-                                    onFetchCompliance(swapId, applicant.employeeCode)
+                                    onFetchCompliance(
+                                        swapId,
+                                        applicant.employeeCode,
+                                    )
                                 }
                             >
                                 בדיקת חוקיות
@@ -63,7 +67,9 @@ export default function ApplicantsList({
                         <div className="applicant-item__actions">
                             <button
                                 className="applicant-item__btn applicant-item__btn--approve"
-                                onClick={() => onApprove(applicant.employeeCode)}
+                                onClick={() =>
+                                    onApprove(applicant.employeeCode)
+                                }
                                 disabled={result?.status === "violation"}
                                 title={
                                     result?.status === "violation"

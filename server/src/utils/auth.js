@@ -21,5 +21,20 @@ export const publishUser = (userObj) => {
     if (!userObj) return null;
     const user = userObj.user || userObj;
     const { password, ...rest } = user;
-    return rest;
+    return {
+        employeeCode: rest.employee_code || rest.employeeCode,
+        role: rest.role,
+        fullName: rest.full_name || rest.fullName,
+        phone: rest.phone,
+        email: rest.email,
+        unitName:
+            rest.unit_name !== undefined
+                ? rest.unit_name
+                : (rest.unitName ?? null),
+        maxWeeklyHours:
+            rest.max_weekly_hours !== undefined
+                ? rest.max_weekly_hours
+                : (rest.maxWeeklyHours ?? null),
+        created_at: rest.created_at,
+    };
 };

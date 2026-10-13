@@ -45,7 +45,10 @@ export default function ManagerSwapsPage() {
             addToast("הבקשה פורסמה לבורסה בהצלחה", "success");
             load();
         } catch (err: unknown) {
-            addToast(getErrorMessage(err, "שגיאה בפרסום הבקשה לבורסה"), "error");
+            addToast(
+                getErrorMessage(err, "שגיאה בפרסום הבקשה לבורסה"),
+                "error",
+            );
         }
     }
 
@@ -59,7 +62,10 @@ export default function ManagerSwapsPage() {
         }
     }
 
-    async function handleApproveApplicant(swapId: string, employeeCode: string) {
+    async function handleApproveApplicant(
+        swapId: string,
+        employeeCode: string,
+    ) {
         try {
             await approveApplicant(swapId, employeeCode);
             addToast(`ההחלפה אושרה עבור עובד ${employeeCode}`, "success");
@@ -79,7 +85,9 @@ export default function ManagerSwapsPage() {
         }
     }
 
-    const pendingPublish = swaps.filter((s) => s.status === "pending_manager_publish");
+    const pendingPublish = swaps.filter(
+        (s) => s.status === "pending_manager_publish",
+    );
     const onBoard = swaps.filter((s) => s.status === "published_to_board");
 
     return (
@@ -99,11 +107,13 @@ export default function ManagerSwapsPage() {
                         <div key={swap._id} className="manager-swap-item">
                             <div className="manager-swap-item__info">
                                 <strong>
-                                    {swap.requesterName ?? swap.requesterEmployeeCode}
+                                    {swap.requesterName ??
+                                        swap.requesterEmployeeCode}
                                 </strong>
                                 {swap.shiftDetails && (
                                     <span>
-                                        {" "}· משמרת #{swap.shiftId}
+                                        {" "}
+                                        · משמרת #{swap.shiftId}
                                         {swap.shiftDetails.title
                                             ? ` (${swap.shiftDetails.title})`
                                             : ""}
@@ -144,7 +154,8 @@ export default function ManagerSwapsPage() {
                         <div key={swap._id} className="manager-swap-item">
                             <div className="manager-swap-item__info">
                                 <strong>
-                                    {swap.requesterName ?? swap.requesterEmployeeCode}
+                                    {swap.requesterName ??
+                                        swap.requesterEmployeeCode}
                                 </strong>
                                 {swap.shiftDetails && (
                                     <span> · משמרת #{swap.shiftId}</span>
@@ -168,9 +179,11 @@ export default function ManagerSwapsPage() {
                 </section>
             )}
 
-            {!loading && pendingPublish.length === 0 && onBoard.length === 0 && (
-                <p className="page__empty">אין בקשות החלפה פעילות.</p>
-            )}
+            {!loading &&
+                pendingPublish.length === 0 &&
+                onBoard.length === 0 && (
+                    <p className="page__empty">אין בקשות החלפה פעילות.</p>
+                )}
         </div>
     );
 }

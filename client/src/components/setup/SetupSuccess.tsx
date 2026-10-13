@@ -1,19 +1,14 @@
 interface SetupSuccessProps {
     adminCode: string;
-    unitName: string;
     onLoginClick: () => void;
 }
 
-const SetupSuccess = ({
-    adminCode,
-    unitName,
-    onLoginClick,
-}: SetupSuccessProps) => {
+const SetupSuccess = ({ adminCode, onLoginClick }: SetupSuccessProps) => {
     return (
         <div className="setup-success-container" dir="rtl">
             <header className="setup-header">
                 <h2>המערכת הוקמה בהצלחה!</h2>
-                <p>נוצר מנהל ראשי חדש ויחידה ראשונית ({unitName}).</p>
+                <p>נוצר מנהל ראשי חדש למערכת.</p>
             </header>
 
             <section className="admin-code-card">

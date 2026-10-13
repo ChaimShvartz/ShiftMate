@@ -6,7 +6,6 @@ interface SetupFormProps {
         fullName: string;
         phone: string;
         email: string;
-        unitName: string;
         password: string;
     }) => void;
     loading: boolean;
@@ -17,7 +16,6 @@ const initialForm = {
     fullName: "",
     phone: "",
     email: "",
-    unitName: "",
     password: "",
 };
 
@@ -35,7 +33,6 @@ const SetupForm = ({ onSubmit, loading, error }: SetupFormProps) => {
             fullName: formData.fullName.trim(),
             phone: formData.phone.trim(),
             email: formData.email.trim(),
-            unitName: formData.unitName.trim(),
             password: formData.password,
         });
     };
@@ -44,7 +41,7 @@ const SetupForm = ({ onSubmit, loading, error }: SetupFormProps) => {
         <div className="setup-form-container" dir="rtl">
             <header className="setup-header">
                 <h1>הקמת מערכת ShiftMate</h1>
-                <p>אשף יצירת מנהל ראשי ויחידה ראשונית</p>
+                <p>יצירת מנהל ראשי</p>
             </header>
 
             {error && <div className="error-message">{error}</div>}
@@ -85,19 +82,6 @@ const SetupForm = ({ onSubmit, loading, error }: SetupFormProps) => {
                         required
                         placeholder="admin@example.com"
                         value={formData.email}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="unitName">שם יחידה ראשונית</label>
-                    <input
-                        id="unitName"
-                        name="unitName"
-                        type="text"
-                        required
-                        placeholder="לדוגמה: מוקד תמיכה"
-                        value={formData.unitName}
                         onChange={handleChange}
                     />
                 </div>

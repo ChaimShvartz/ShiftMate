@@ -9,6 +9,7 @@ interface UsersTableProps {
     onFilterChange: (filters: { unitName: string; role: string }) => void;
     onDeleteUser: (employeeCode: string, name: string) => Promise<void>;
     onOpenReplaceManager: (manager: User) => void;
+    onOpenEditUser: (user: User) => void;
     onOpenAddUser: () => void;
 }
 
@@ -19,6 +20,7 @@ const UsersTable = ({
     onFilterChange,
     onDeleteUser,
     onOpenReplaceManager,
+    onOpenEditUser,
     onOpenAddUser,
 }: UsersTableProps) => {
     const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -44,7 +46,7 @@ const UsersTable = ({
             <header className="section-header">
                 <div className="section-title-wrap">
                     <h2>ניהול משתמשים</h2>
-                    <p>צפייה, סינון, הוספה ומחיקה של משתמשי המערכת</p>
+                    <p>צפייה, סינון, הוספה ועריכה של משתמשי המערכת</p>
                 </div>
                 <button
                     type="button"
@@ -87,6 +89,18 @@ const UsersTable = ({
                         <option value="employee">עובד</option>
                     </select>
                 </div>
+
+                {(filters.unitName || filters.role) && (
+                    <button
+                        type="button"
+                        className="btn-clear-filters"
+                        onClick={() =>
+                            onFilterChange({ unitName: "", role: "" })
+                        }
+                    >
+                        איפוס סינונים
+                    </button>
+                )}
             </div>
 
             <div className="users-table-container">
@@ -122,15 +136,31 @@ const UsersTable = ({
                                             {getRoleLabel(u.role)}
                                         </span>
                                     </td>
-                                    <td>{u.unitName || "—"}</td>
+                                    <td>
+                                        {u.role === "admin" ? (
+                                            <span className="unit-global-tag">
+                                                כלל המערכת
+                                            </span>
+                                        ) : (
+                                            u.unitName || "—"
+                                        )}
+                                    </td>
                                     <td>{u.phone}</td>
                                     <td>{u.email}</td>
                                     <td>
-                                        {u.maxWeeklyHours
-                                            ? `${u.maxWeeklyHours} שע'`
+                                        {u.role === "employee"
+                                            ? `${u.maxWeeklyHours || 40} שע'`
                                             : "—"}
                                     </td>
                                     <td className="actions-cell">
+                                        <button
+                                            type="button"
+                                            className="btn-edit"
+                                            onClick={() => onOpenEditUser(u)}
+                                        >
+                                            ערוך
+                                        </button>
+
                                         {u.role === "manager" && (
                                             <button
                                                 type="button"

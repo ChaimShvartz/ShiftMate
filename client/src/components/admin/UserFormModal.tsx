@@ -64,9 +64,10 @@ const UserFormModal = ({
                 email: formData.email.trim(),
                 password: formData.password,
                 unitName: formData.unitName || undefined,
-                maxWeeklyHours: formData.maxWeeklyHours
-                    ? Number(formData.maxWeeklyHours)
-                    : null,
+                maxWeeklyHours:
+                    formData.role === "employee" && formData.maxWeeklyHours
+                        ? Number(formData.maxWeeklyHours)
+                        : null,
             });
 
             if (result) {
@@ -91,11 +92,22 @@ const UserFormModal = ({
         onClose();
     };
 
+    const isManager = formData.role === "manager";
+
     return (
         <div className="modal-backdrop" dir="rtl">
             <div className="modal-content">
                 <header className="modal-header">
-                    <h3>הוספת משתמש חדש</h3>
+                    <div>
+                        <h3>
+                            {isManager ? "מינוי מנהל יחידה" : "הוספת עובד חדש"}
+                        </h3>
+                        <p className="modal-subtitle">
+                            {isManager
+                                ? "הגדרת מנהל יחידה (מנהל פעיל יחיד לכל יחידה)"
+                                : "הגדרת עובד חדש ושיוכו ליחידה פעילה"}
+                        </p>
+                    </div>
                     <button
                         type="button"
                         className="btn-close"
@@ -137,7 +149,7 @@ const UserFormModal = ({
                 ) : (
                     <form onSubmit={handleSubmit} className="modal-form">
                         <div className="form-group">
-                            <label htmlFor="userRole">תפקיד</label>
+                            <label htmlFor="userRole">תפקיד המשתמש</label>
                             <select
                                 id="userRole"
                                 name="role"
@@ -145,8 +157,12 @@ const UserFormModal = ({
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="employee">עובד</option>
-                                <option value="manager">מנהל יחידה</option>
+                                <option value="employee">
+                                    עובד (משובץ למשמרות)
+                                </option>
+                                <option value="manager">
+                                    מנהל יחידה (אחראי משמרות)
+                                </option>
                             </select>
                         </div>
 
@@ -177,7 +193,7 @@ const UserFormModal = ({
                         </div>
 
                         <div className="form-group">
-                            <label htmlFor="userEmail">אימייל</label>
+                            <label htmlFor="userEmail">כתובת אימייל</label>
                             <input
                                 id="userEmail"
                                 name="email"
@@ -190,7 +206,11 @@ const UserFormModal = ({
                         </div>
 
                         <div className="form-group">
-                            <label htmlFor="userUnit">שיוך יחידה</label>
+                            <label htmlFor="userUnit">
+                                {isManager
+                                    ? "יחידה לניהול *"
+                                    : "יחידה משויכת *"}
+                            </label>
                             <select
                                 id="userUnit"
                                 name="unitName"
@@ -221,7 +241,7 @@ const UserFormModal = ({
                             />
                         </div>
 
-                        {formData.role === "employee" && (
+                        {formData.role === "employee" ? (
                             <div className="form-group">
                                 <label htmlFor="maxWeeklyHours">
                                     מקסימום שעות שבועיות (אופציונלי)
@@ -231,11 +251,21 @@ const UserFormModal = ({
                                     name="maxWeeklyHours"
                                     type="number"
                                     min={1}
-                                    max={168}
-                                    placeholder="ברירת מחדל: 40"
+                                    max={100}
+                                    placeholder="ברירת מחדל: 40 שעות"
                                     value={formData.maxWeeklyHours}
                                     onChange={handleChange}
                                 />
+                                <small className="form-hint">
+                                    מכסה זו משמשת לבדיקות תאימות ושיבוץ משמרות.
+                                </small>
+                            </div>
+                        ) : (
+                            <div className="role-notice-card">
+                                <span>ℹ️</span>
+                                <span>
+                                    למנהלי יחידות אין מכסת שעות עובד שבועית.
+                                </span>
                             </div>
                         )}
 
@@ -252,7 +282,11 @@ const UserFormModal = ({
                                 disabled={status.loading}
                                 className="btn-submit"
                             >
-                                {status.loading ? "יוצר..." : "צור משתמש"}
+                                {status.loading
+                                    ? "יוצר..."
+                                    : isManager
+                                      ? "מנה מנהל יחידה"
+                                      : "צור עובד חדש"}
                             </button>
                         </div>
                     </form>

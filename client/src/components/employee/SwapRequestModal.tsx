@@ -32,7 +32,12 @@ export default function SwapRequestModal({ shift, onConfirm, onClose }: Props) {
     }
 
     return (
-        <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal>
+        <div
+            className="modal-overlay"
+            onClick={onClose}
+            role="dialog"
+            aria-modal
+        >
             <div className="swap-modal" onClick={(e) => e.stopPropagation()}>
                 <h2 className="swap-modal__title">בקשת החלפת משמרת</h2>
                 <p className="swap-modal__subtitle">

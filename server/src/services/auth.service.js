@@ -29,7 +29,10 @@ export const authService = {
                 employeeCode: userRecord.employee_code,
                 role: userRecord.role,
                 fullName: userRecord.full_name,
+                phone: userRecord.phone,
+                email: userRecord.email,
                 unitName: userRecord.unit_name || null,
+                maxWeeklyHours: userRecord.max_weekly_hours ?? null,
             },
         };
     },

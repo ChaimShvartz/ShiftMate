@@ -10,7 +10,6 @@ export async function initAdmin(body: {
     fullName: string;
     phone: string;
     email: string;
-    unitName: string;
     password: string;
 }): Promise<User> {
     const res = await apiClient.post("/setup/init", body);

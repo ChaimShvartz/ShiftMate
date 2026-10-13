@@ -5,7 +5,9 @@ import {
     deleteUser,
     getAllUsers,
     replaceManager,
+    updateUser,
 } from "../api/users";
+import EditUserModal from "../components/admin/EditUserModal";
 import ReplaceManagerModal from "../components/admin/ReplaceManagerModal";
 import UnitsSection from "../components/admin/UnitsSection";
 import UserFormModal from "../components/admin/UserFormModal";
@@ -22,6 +24,7 @@ interface AdminPageState {
     filters: { unitName: string; role: string };
     isAddUserOpen: boolean;
     replacingManager: User | null;
+    editingUser: User | null;
     activeTab: "users" | "units";
 }
 
@@ -35,6 +38,7 @@ const AdminPage = () => {
         filters: { unitName: "", role: "" },
         isAddUserOpen: false,
         replacingManager: null,
+        editingUser: null,
         activeTab: "users",
     });
 
@@ -59,54 +63,21 @@ const AdminPage = () => {
             setState((prev) => ({
                 ...prev,
                 loading: false,
-                error: getErrorMessage(err, "שגיאה בטעינת נתוני המערכת"),
+                error: getErrorMessage(err, "שגיאה בטעינת נתוני מערכת"),
             }));
         }
     };
 
     useEffect(() => {
-        loadData(state.filters);
-    }, [state.filters.unitName, state.filters.role]);
+        loadData();
+    }, []);
 
-    const handleFilterChange = (newFilters: {
+    const handleFilterChange = (filters: {
         unitName: string;
         role: string;
     }) => {
-        setState((prev) => ({ ...prev, filters: newFilters }));
-    };
-
-    const handleAddUnit = async (name: string) => {
-        setState((prev) => ({ ...prev, error: null, feedback: null }));
-        try {
-            const newUnit = await createUnit(name);
-            setState((prev) => ({
-                ...prev,
-                units: [...prev.units, newUnit],
-                feedback: `היחידה "${name}" נוספה בהצלחה!`,
-            }));
-        } catch (err) {
-            setState((prev) => ({
-                ...prev,
-                error: getErrorMessage(err, "שגיאה בהוספת יחידה"),
-            }));
-        }
-    };
-
-    const handleDeleteUnit = async (name: string) => {
-        setState((prev) => ({ ...prev, error: null, feedback: null }));
-        try {
-            await deleteUnit(name);
-            setState((prev) => ({
-                ...prev,
-                units: prev.units.filter((u) => u.name !== name),
-                feedback: `היחידה "${name}" נמחקה בהצלחה.`,
-            }));
-        } catch (err) {
-            setState((prev) => ({
-                ...prev,
-                error: getErrorMessage(err, "שגיאה במחיקת יחידה"),
-            }));
-        }
+        setState((prev) => ({ ...prev, filters, loading: true }));
+        loadData(filters);
     };
 
     const handleCreateUser = async (userData: {
@@ -118,17 +89,38 @@ const AdminPage = () => {
         unitName?: string;
         maxWeeklyHours?: number | null;
     }) => {
-        try {
-            const newUser = await createUser(userData);
-            await loadData(state.filters);
-            return newUser;
-        } catch (err) {
-            throw new Error(getErrorMessage(err, "שגיאה ביצירת המשתמש"));
-        }
+        const newUser = await createUser(userData);
+        setState((prev) => ({
+            ...prev,
+            users: [newUser, ...prev.users],
+            feedback: `משתמש חדש (${newUser.fullName}) נוסף בהצלחה! קוד: #${newUser.employeeCode}`,
+        }));
+        return newUser;
+    };
+
+    const handleUpdateUser = async (
+        employeeCode: string,
+        updates: {
+            fullName?: string;
+            phone?: string;
+            email?: string;
+            unitName?: string;
+            maxWeeklyHours?: number | null;
+            password?: string;
+        },
+    ) => {
+        const updated = await updateUser(employeeCode, updates);
+        setState((prev) => ({
+            ...prev,
+            users: prev.users.map((u) =>
+                u.employeeCode === employeeCode ? updated : u,
+            ),
+            feedback: `פרטי ${updated.fullName} עודכנו בהצלחה`,
+        }));
+        return updated;
     };
 
     const handleDeleteUser = async (employeeCode: string, name: string) => {
-        setState((prev) => ({ ...prev, error: null, feedback: null }));
         try {
             await deleteUser(employeeCode);
             setState((prev) => ({
@@ -136,7 +128,7 @@ const AdminPage = () => {
                 users: prev.users.filter(
                     (u) => u.employeeCode !== employeeCode,
                 ),
-                feedback: `המשתמש ${name} (#${employeeCode}) נמחק בהצלחה.`,
+                feedback: `משתמש ${name} נמחק בהצלחה`,
             }));
         } catch (err) {
             setState((prev) => ({
@@ -147,35 +139,82 @@ const AdminPage = () => {
     };
 
     const handleReplaceManager = async (
-        employeeCode: string,
-        newManagerData: {
+        managerCode: string,
+        data: {
             fullName: string;
             phone: string;
             email: string;
             password: string;
         },
     ) => {
-        try {
-            const result = await replaceManager(employeeCode, newManagerData);
-            await loadData(state.filters);
-            return result;
-        } catch (err) {
-            throw new Error(getErrorMessage(err, "שגיאה בהחלפת מנהל היחידה"));
-        }
+        const result = await replaceManager(managerCode, data);
+        setState((prev) => ({
+            ...prev,
+            users: prev.users.map((u) =>
+                u.employeeCode === managerCode ? result.newManager : u,
+            ),
+            feedback: `מנהל היחידה הוחלף בהצלחה. קוד המנהל החדש: #${result.newManager.employeeCode}`,
+        }));
+        return result;
+    };
+
+    const handleAddUnit = async (name: string) => {
+        const newUnit = await createUnit(name);
+        setState((prev) => ({
+            ...prev,
+            units: [...prev.units, newUnit],
+            feedback: `יחידה חדשה '${newUnit.name}' נוצרה בהצלחה`,
+        }));
+    };
+
+    const handleDeleteUnit = async (name: string) => {
+        await deleteUnit(name);
+        setState((prev) => ({
+            ...prev,
+            units: prev.units.filter((u) => u.name !== name),
+            feedback: `יחידה '${name}' נמחקה בהצלחה`,
+        }));
     };
 
     return (
-        <div className="admin-page" dir="rtl">
-            <header className="page-header">
-                <h1>🏢 פורטל ניהול מערכת</h1>
-                <p>שליטה מלאה ביחידות הארגון ובמשתמשים</p>
+        <div className="admin-page-container" dir="rtl">
+            <header className="admin-header">
+                <div className="admin-title">
+                    <h1>⚙️ ניהול מערכת ShiftMate</h1>
+                    <p>
+                        פאנל שליטה ראשי: ניהול עובדים, מנהלים ויחידות ארגוניות
+                    </p>
+                </div>
             </header>
 
             {state.feedback && (
-                <div className="feedback-banner success">{state.feedback}</div>
+                <div className="feedback-banner">
+                    <span>{state.feedback}</span>
+                    <button
+                        type="button"
+                        className="btn-dismiss"
+                        onClick={() =>
+                            setState((prev) => ({ ...prev, feedback: null }))
+                        }
+                    >
+                        ✕
+                    </button>
+                </div>
             )}
+
             {state.error && (
-                <div className="feedback-banner error">{state.error}</div>
+                <div className="error-banner">
+                    <span>{state.error}</span>
+                    <button
+                        type="button"
+                        className="btn-dismiss"
+                        onClick={() =>
+                            setState((prev) => ({ ...prev, error: null }))
+                        }
+                    >
+                        ✕
+                    </button>
+                </div>
             )}
 
             <div className="admin-tabs-bar">
@@ -214,6 +253,12 @@ const AdminPage = () => {
                             replacingManager: manager,
                         }))
                     }
+                    onOpenEditUser={(user) =>
+                        setState((prev) => ({
+                            ...prev,
+                            editingUser: user,
+                        }))
+                    }
                     onOpenAddUser={() =>
                         setState((prev) => ({ ...prev, isAddUserOpen: true }))
                     }
@@ -235,6 +280,16 @@ const AdminPage = () => {
                 }
                 units={state.units}
                 onSubmit={handleCreateUser}
+            />
+
+            <EditUserModal
+                isOpen={Boolean(state.editingUser)}
+                user={state.editingUser}
+                units={state.units}
+                onClose={() =>
+                    setState((prev) => ({ ...prev, editingUser: null }))
+                }
+                onSubmit={handleUpdateUser}
             />
 
             <ReplaceManagerModal
