@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Shift } from "../../types";
+import { fmtDateLong, fmtTimeRange } from "../../utils/datetime";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 
 interface Props {
@@ -24,7 +25,7 @@ export default function SwapRequestModal({ shift, onConfirm, onClose }: Props) {
         try {
             await onConfirm(shift.id, reason.trim());
             onClose();
-        } catch (err: unknown) {
+        } catch (err) {
             setError(getErrorMessage(err, "שגיאה בהגשת בקשת החלפה"));
         } finally {
             setLoading(false);
@@ -32,23 +33,21 @@ export default function SwapRequestModal({ shift, onConfirm, onClose }: Props) {
     }
 
     return (
-        <div
-            className="modal-overlay"
-            onClick={onClose}
-            role="dialog"
-            aria-modal
-        >
-            <div className="swap-modal" onClick={(e) => e.stopPropagation()}>
-                <h2 className="swap-modal__title">בקשת החלפת משמרת</h2>
-                <p className="swap-modal__subtitle">
-                    משמרת #{shift.id} — {shift.title || "ללא כותרת"}
+        <div className="modal-backdrop" dir="rtl" onClick={onClose} role="dialog" aria-modal>
+            <div className="modal-content modal-content--sm" onClick={(e) => e.stopPropagation()}>
+                <header className="modal-header">
+                    <h3>בקשת החלפת משמרת</h3>
+                    <button type="button" className="btn-close" onClick={onClose} aria-label="סגור">✕</button>
+                </header>
+                <p className="modal-subtitle">
+                    {shift.title || "משמרת"} · {fmtDateLong(shift.startTime)} · {fmtTimeRange(shift.startTime, shift.endTime)}
                 </p>
 
-                <form onSubmit={handleSubmit} className="swap-modal__form">
-                    <label className="swap-modal__label">
-                        סיבת ההחלפה
+                <form onSubmit={handleSubmit} className="modal-form">
+                    <div className="form-group">
+                        <label htmlFor="swapReason">סיבת ההחלפה</label>
                         <textarea
-                            className="swap-modal__textarea"
+                            id="swapReason"
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
                             placeholder="לדוגמה: תור לרופא, אירוע משפחתי..."
@@ -56,22 +55,12 @@ export default function SwapRequestModal({ shift, onConfirm, onClose }: Props) {
                             maxLength={300}
                             autoFocus
                         />
-                    </label>
-                    {error && <p className="swap-modal__error">{error}</p>}
-                    <div className="swap-modal__actions">
-                        <button
-                            type="button"
-                            className="swap-modal__btn swap-modal__btn--cancel"
-                            onClick={onClose}
-                            disabled={loading}
-                        >
-                            ביטול
-                        </button>
-                        <button
-                            type="submit"
-                            className="swap-modal__btn swap-modal__btn--submit"
-                            disabled={loading}
-                        >
+                        <span className="form-hint">{reason.length}/300 · הבקשה תישלח למנהל היחידה לאישור פרסום</span>
+                    </div>
+                    {error && <div className="error-message">{error}</div>}
+                    <div className="modal-actions">
+                        <button type="button" className="btn-cancel" onClick={onClose} disabled={loading}>ביטול</button>
+                        <button type="submit" className="btn-submit" disabled={loading}>
                             {loading ? "שולח..." : "שלח בקשה"}
                         </button>
                     </div>

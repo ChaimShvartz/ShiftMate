@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../../utils/getErrorMessage";
 import React, { useState } from "react";
 import type { User } from "../../types";
 
@@ -69,11 +70,11 @@ const ReplaceManagerModal = ({
                     newManager: res.newManager,
                 });
             }
-        } catch (err: any) {
+        } catch (err) {
             setStatus((prev) => ({
                 ...prev,
                 loading: false,
-                error: err?.message || "שגיאה בהחלפת מנהל",
+                error: getErrorMessage(err, "שגיאה בהחלפת מנהל"),
             }));
         }
     };

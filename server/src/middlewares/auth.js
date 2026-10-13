@@ -1,23 +1,38 @@
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config.js";
+import { usersRepo } from "../repositories/index.js";
 import { throwHttpError } from "../utils/errors.js";
 
-export function authenticate(req, _res, next) {
+// Resolve the identity from the DB on every request so that deleted/replaced
+// users lose access immediately and role/unit changes take effect without relogin.
+export async function resolveUser(token) {
+    let decoded;
+    try {
+        decoded = jwt.verify(token, JWT_SECRET);
+    } catch {
+        throwHttpError(401, "Authentication required - Invalid or expired token");
+    }
+    const record = await usersRepo.getDocByField(
+        "employee_code",
+        decoded.employeeCode,
+    );
+    if (!record) {
+        throwHttpError(401, "Authentication required - Invalid or expired token");
+    }
+    return {
+        employeeCode: record.employee_code,
+        role: record.role,
+        unitName: record.unit_name || null,
+    };
+}
+
+export async function authenticate(req, _res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer "))
         throwHttpError(401, "Authentication required - Missing token");
 
-    const token = authHeader.split(" ")[1];
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch {
-        throwHttpError(
-            401,
-            "Authentication required - Invalid or expired token",
-        );
-    }
+    req.user = await resolveUser(authHeader.split(" ")[1]);
+    next();
 }
 
 export function authorizeRole(...allowedRoles) {
@@ -33,7 +48,7 @@ export function authorizeRole(...allowedRoles) {
     };
 }
 
-export function socketAuth(socket, next) {
+export async function socketAuth(socket, next) {
     const token = socket.handshake.auth?.token;
 
     if (!token) {
@@ -46,8 +61,7 @@ export function socketAuth(socket, next) {
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        socket.user = decoded;
+        socket.user = await resolveUser(token);
         next();
     } catch {
         const err = new Error(

@@ -5,43 +5,24 @@ let ioInstance = null;
 
 export function initializeSocket(httpServer) {
     const io = new Server(httpServer, {
-        cors: {
-            origin: "*",
-            methods: ["GET", "POST"],
-        },
+        cors: { origin: "*", methods: ["GET", "POST"] },
     });
 
     ioInstance = io;
-
     io.use(socketAuth);
 
+    // Rooms are derived strictly from the verified identity - clients cannot
+    // join arbitrary rooms.
     io.on("connection", (socket) => {
-        const user = socket.user;
-        if (user?.unitName) {
-            socket.join(`unit:${user.unitName}`);
-        }
-        if (user?.employeeCode) {
-            socket.join(`user:${user.employeeCode}`);
-        }
-
-        socket.on("join_unit", (unitName) => {
-            if (unitName) {
-                socket.join(`unit:${unitName}`);
-            }
-        });
-
-        socket.on("join_user", (employeeCode) => {
-            if (employeeCode) {
-                socket.join(`user:${employeeCode}`);
-            }
-        });
-
-        socket.on("disconnect", () => {});
+        const { employeeCode, role, unitName } = socket.user;
+        socket.join(`user:${employeeCode}`);
+        if (unitName) socket.join(`unit:${unitName}`);
+        if (unitName && role === "manager") socket.join(`managers:${unitName}`);
     });
 
     return io;
 }
 
-export function getIO() {
-    return ioInstance;
+export function emitToUser(employeeCode, event, payload) {
+    ioInstance?.to(`user:${employeeCode}`).emit(event, payload);
 }

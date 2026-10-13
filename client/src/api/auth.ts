@@ -1,5 +1,5 @@
-import type { LoginResponse, User } from "../types";
-import { addAuthHeaders, apiClient } from "./api";
+import type { LoginResponse } from "../types";
+import { apiClient } from "./api";
 
 export async function login(
     employeeCode: string,
@@ -9,9 +9,3 @@ export async function login(
     return res.data.data;
 }
 
-export async function getMe(): Promise<User> {
-    const res = await apiClient.get("/users/me", {
-        headers: addAuthHeaders(),
-    });
-    return res.data.data;
-}

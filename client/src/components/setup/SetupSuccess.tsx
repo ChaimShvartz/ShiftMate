@@ -1,3 +1,4 @@
+import Logo from "../brand/Logo";
 import { useState } from "react";
 
 interface SetupSuccessProps {
@@ -17,11 +18,7 @@ const SetupSuccess = ({ adminCode, onLoginClick }: SetupSuccessProps) => {
     return (
         <div className="setup-success-container" dir="rtl">
             <header className="setup-header">
-                <img
-                    src="/logo-icon.png"
-                    alt="ShiftMate"
-                    className="setup-success-logo-icon"
-                />
+                <Logo size={56} />
                 <h2>המערכת הוקמה בהצלחה!</h2>
                 <p>נוצר מנהל ראשי חדש למערכת.</p>
             </header>

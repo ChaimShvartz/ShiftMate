@@ -1,3 +1,5 @@
+import ThemeToggle from "../components/ui/ThemeToggle";
+import Logo from "../components/brand/Logo";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getSetupStatus } from "../api/setup";
@@ -26,7 +28,7 @@ const LoginPage = () => {
     useEffect(() => {
         if (user) {
             if (user.role === "admin") navigate("/admin");
-            else if (user.role === "manager") navigate("/schedule");
+            else if (user.role === "manager") navigate("/dashboard");
             else navigate("/my-shifts");
         }
     }, [user, navigate]);
@@ -62,7 +64,7 @@ const LoginPage = () => {
             if (currentUser?.role === "admin") {
                 navigate("/admin");
             } else if (currentUser?.role === "manager") {
-                navigate("/schedule");
+                navigate("/dashboard");
             } else {
                 navigate("/my-shifts");
             }
@@ -70,7 +72,7 @@ const LoginPage = () => {
             setState((prev) => ({
                 ...prev,
                 loading: false,
-                error: getErrorMessage(err, "קוד עובד או סיסמה שגויים"),
+                error: getErrorMessage(err, "ההתחברות נכשלה, נסו שוב"),
             }));
         }
     };
@@ -79,13 +81,12 @@ const LoginPage = () => {
         <main className="login-page" dir="rtl">
             <div className="login-bg-glow login-bg-glow--1" />
             <div className="login-bg-glow login-bg-glow--2" />
+            <div className="login-theme">
+                <ThemeToggle />
+            </div>
             <div className="login-card">
                 <header className="login-header">
-                    <img
-                        src="/logo-horizontal.png"
-                        alt="ShiftMate"
-                        className="login-logo-img"
-                    />
+                    <Logo size={52} />
                     <p className="login-subtitle">
                         מערכת חכמה לניהול משמרות, עובדים וחילופים
                     </p>

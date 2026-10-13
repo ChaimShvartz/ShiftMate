@@ -18,5 +18,9 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Data fetching on mount/refresh legitimately sets state from an effect.
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])

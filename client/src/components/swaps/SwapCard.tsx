@@ -1,75 +1,58 @@
 import type { SwapRequest } from "../../types";
+import { fmtDateShort, fmtTimeRange, timeAgo } from "../../utils/datetime";
 
 interface Props {
     swap: SwapRequest;
     currentEmployeeCode: string;
+    busy?: boolean;
     onApply?: () => void;
 }
 
-function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString("he-IL", {
-        day: "numeric",
-        month: "short",
-        weekday: "short",
-    });
-}
-
-function formatTime(iso: string) {
-    return new Date(iso).toLocaleTimeString("he-IL", {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-}
-
-export default function SwapCard({
-    swap,
-    currentEmployeeCode,
-    onApply,
-}: Props) {
-    const alreadyApplied = swap.applicants.some(
-        (a) => a.employeeCode === currentEmployeeCode,
-    );
+export default function SwapCard({ swap, currentEmployeeCode, busy, onApply }: Props) {
+    const myApplication = swap.applicants.find((a) => a.employeeCode === currentEmployeeCode);
     const isRequester = swap.requesterEmployeeCode === currentEmployeeCode;
+    const shift = swap.shiftDetails;
 
     return (
-        <div className="swap-card">
-            <div className="swap-card__header">
-                <span className="swap-card__requester">
-                    🔄 {swap.requesterName ?? swap.requesterEmployeeCode}
-                </span>
-                <span className="swap-card__week">שבוע {swap.weekNumber}</span>
-            </div>
+        <article className={`swap-card ${isRequester ? "swap-card--mine" : ""}`}>
+            <header className="swap-card__header">
+                <span className="avatar">{(swap.requesterName ?? "?").slice(0, 1)}</span>
+                <div>
+                    <strong>{swap.requesterName ?? swap.requesterEmployeeCode}</strong>
+                    <small>{timeAgo(swap.createdAt)} · שבוע {swap.weekNumber}</small>
+                </div>
+                {isRequester && <span className="chip chip--info">הבקשה שלך</span>}
+            </header>
 
-            {swap.shiftDetails && (
+            {shift && (
                 <div className="swap-card__shift">
-                    <span>{swap.shiftDetails.title || "משמרת"}</span>
-                    <span>
-                        {formatDate(swap.shiftDetails.startTime)} ·{" "}
-                        {formatTime(swap.shiftDetails.startTime)}–
-                        {formatTime(swap.shiftDetails.endTime)}
-                    </span>
+                    <div className="swap-card__when">
+                        <span>{fmtDateShort(shift.startTime)}</span>
+                        <b>{fmtTimeRange(shift.startTime, shift.endTime)}</b>
+                    </div>
+                    {shift.title && <span className="swap-card__title">{shift.title}</span>}
                 </div>
             )}
 
-            {swap.reason && (
-                <p className="swap-card__reason">"{swap.reason}"</p>
-            )}
+            {swap.reason && <p className="swap-card__reason">“{swap.reason}”</p>}
 
-            <div className="swap-card__footer">
-                <span className="swap-card__applicants">
-                    👥 {swap.applicants.length} מועמדים
-                </span>
-
+            <footer className="swap-card__footer">
+                <span className="swap-card__applicants">👥 {swap.applicantsCount} מועמדים</span>
                 {onApply && !isRequester && (
                     <button
+                        type="button"
                         className="swap-card__apply-btn"
                         onClick={onApply}
-                        disabled={alreadyApplied}
+                        disabled={busy || Boolean(myApplication)}
                     >
-                        {alreadyApplied ? "✓ הוגשה מועמדות" : "הגש מועמדות"}
+                        {myApplication
+                            ? myApplication.status === "rejected"
+                                ? "לא התקבלה"
+                                : "ממתין לאישור מנהל"
+                            : "קבל משמרת"}
                     </button>
                 )}
-            </div>
-        </div>
+            </footer>
+        </article>
     );
 }

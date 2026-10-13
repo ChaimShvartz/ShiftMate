@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useUiStore } from "../../store/uiStore";
 import type { Unit } from "../../types";
 
 interface UnitsSectionProps {
@@ -36,10 +37,14 @@ const UnitsSection = ({
         setFormData(initialForm);
     };
 
-    const handleDelete = (name: string) => {
-        if (window.confirm(`האם אתה בטוח שברצונך למחוק את יחידה "${name}"?`)) {
-            onDeleteUnit(name);
-        }
+    const handleDelete = async (name: string) => {
+        const ok = await useUiStore.getState().confirm({
+            title: "מחיקת יחידה",
+            message: `למחוק את היחידה "${name}"? ניתן למחוק רק יחידה ריקה מעובדים.`,
+            confirmLabel: "מחק",
+            danger: true,
+        });
+        if (ok) onDeleteUnit(name);
     };
 
     return (

@@ -2,12 +2,16 @@ import { z } from "zod";
 
 export const ROLE_VALUES = ["admin", "manager", "employee"];
 
+// Everyone signs in with their 6-digit code; managers/admin may also use their email.
 export const loginSchema = z.object({
     employeeCode: z
         .string()
         .trim()
-        .regex(/^\d{6}$/, "Employee code must be a 6-digit number"),
-    password: z.string().min(6, "Password is required"),
+        .refine(
+            (v) => /^\d{6}$/.test(v) || z.email().safeParse(v).success,
+            "Enter a 6-digit employee code or an email address",
+        ),
+    password: z.string().min(1, "Password is required"),
 });
 
 export const createUserSchema = z
@@ -76,7 +80,7 @@ export const createUserSchema = z
 export const updateUserSchema = z.object({
     fullName: z.string().trim().min(2).optional(),
     phone: z.string().trim().min(6).optional(),
-    email: z.email("Invalid email format").optional(),
+    email: z.email("Invalid email format").toLowerCase().optional(),
     unitName: z.string().trim().min(1).optional(),
     maxWeeklyHours: z.number().int().positive().optional().nullable(),
     password: z.string().min(6).optional(),
@@ -85,7 +89,7 @@ export const updateUserSchema = z.object({
 export const updateMeSchema = z.object({
     fullName: z.string().trim().min(2).optional(),
     phone: z.string().trim().min(6).optional(),
-    email: z.email("Invalid email format").optional(),
+    email: z.email("Invalid email format").toLowerCase().optional(),
     password: z.string().min(6).optional(),
 });
 
@@ -95,6 +99,6 @@ export const initAdminSchema = z.object({
         .trim()
         .min(2, "Full name must be at least 2 characters"),
     phone: z.string().trim().min(6, "Phone must be at least 6 characters"),
-    email: z.email("Invalid email format"),
+    email: z.email("Invalid email format").toLowerCase(),
     password: z.string().min(6, "Password must be at least 6 characters"),
 });

@@ -17,4 +17,5 @@ export const TABLES = {
 export const COLLECTIONS = {
     SHIFT_WEEKS: "shift_weeks",
     SWAP_REQUESTS: "swap_requests",
+    NOTIFICATIONS: "notifications",
 };

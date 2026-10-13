@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../../utils/getErrorMessage";
 import React, { useEffect, useState } from "react";
 import type { Unit, User } from "../../types";
 
@@ -108,11 +109,11 @@ const EditUserModal = ({
                     onClose();
                 }, 800);
             }
-        } catch (err: any) {
+        } catch (err) {
             setStatus((prev) => ({
                 ...prev,
                 loading: false,
-                error: err?.message || "שגיאה בעדכון פרטי המשתמש",
+                error: getErrorMessage(err, "שגיאה בעדכון פרטי המשתמש"),
             }));
         }
     };

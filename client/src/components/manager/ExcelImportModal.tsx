@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { downloadTemplate, importShifts } from "../../api/shifts";
 import type { ShiftWeek } from "../../types";
-import { getErrorMessage } from "../../utils/getErrorMessage";
+import { getErrorDetails, getErrorMessage } from "../../utils/getErrorMessage";
 
 interface ExcelImportModalProps {
     isOpen: boolean;
@@ -14,6 +14,7 @@ interface ImportState {
     loading: boolean;
     downloading: boolean;
     error: string | null;
+    rowErrors: { row?: number; message: string }[];
     successMessage: string | null;
 }
 
@@ -27,6 +28,7 @@ const ExcelImportModal = ({
         loading: false,
         downloading: false,
         error: null,
+        rowErrors: [],
         successMessage: null,
     });
 
@@ -38,6 +40,7 @@ const ExcelImportModal = ({
             ...prev,
             file: selectedFile,
             error: null,
+            rowErrors: [],
             successMessage: null,
         }));
     };
@@ -74,7 +77,12 @@ const ExcelImportModal = ({
             return;
         }
 
-        setState((prev) => ({ ...prev, loading: true, error: null }));
+        setState((prev) => ({
+            ...prev,
+            loading: true,
+            error: null,
+            rowErrors: [],
+        }));
 
         try {
             const createdWeek = await importShifts(state.file);
@@ -92,6 +100,7 @@ const ExcelImportModal = ({
                 ...prev,
                 loading: false,
                 error: getErrorMessage(err, "שגיאה בהעלאת קובץ האקסל"),
+                rowErrors: getErrorDetails(err),
             }));
         }
     };
@@ -102,6 +111,7 @@ const ExcelImportModal = ({
             loading: false,
             downloading: false,
             error: null,
+            rowErrors: [],
             successMessage: null,
         });
         onClose();
@@ -131,6 +141,15 @@ const ExcelImportModal = ({
 
                 {state.error && (
                     <div className="error-message">{state.error}</div>
+                )}
+                {state.rowErrors.length > 0 && (
+                    <ul className="row-errors">
+                        {state.rowErrors.map((r, i) => (
+                            <li key={i}>
+                                {r.row ? <b>שורה {r.row}:</b> : null} {r.message}
+                            </li>
+                        ))}
+                    </ul>
                 )}
                 {state.successMessage && (
                     <div className="success-message">

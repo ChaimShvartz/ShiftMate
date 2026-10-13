@@ -1,4 +1,13 @@
 import { ObjectId } from "mongodb";
+import { throwHttpError } from "../utils/errors.js";
+
+function toObjectId(id) {
+    try {
+        return new ObjectId(id);
+    } catch {
+        throwHttpError(400, "Invalid ID format");
+    }
+}
 
 function formatId(doc) {
     if (!doc) return null;
@@ -17,7 +26,7 @@ export function createMongoRepo(getCollection) {
     }
 
     async function getDocById(id) {
-        const doc = await getCollection().findOne({ _id: new ObjectId(id) });
+        const doc = await getCollection().findOne({ _id: toObjectId(id) });
         return formatId(doc);
     }
 
@@ -40,16 +49,32 @@ export function createMongoRepo(getCollection) {
         return result.insertedId.toString();
     }
 
+    async function updateMany(filter, updateQuery) {
+        const result = await getCollection().updateMany(filter, updateQuery);
+        return result.modifiedCount;
+    }
+
+    async function deleteMany(filter) {
+        const result = await getCollection().deleteMany(filter);
+        return result.deletedCount;
+    }
+
+    async function createMany(docs) {
+        if (!docs.length) return [];
+        const result = await getCollection().insertMany(docs);
+        return Object.values(result.insertedIds).map((id) => id.toString());
+    }
+
     async function deleteDoc(id) {
         const result = await getCollection().deleteOne({
-            _id: new ObjectId(id),
+            _id: toObjectId(id),
         });
         return result.deletedCount;
     }
 
     async function updateDoc(id, updates) {
         const result = await getCollection().updateOne(
-            { _id: new ObjectId(id) },
+            { _id: toObjectId(id) },
             { $set: updates },
         );
         return result.matchedCount;
@@ -71,6 +96,9 @@ export function createMongoRepo(getCollection) {
         findOne,
         countDocs,
         createDoc,
+        createMany,
+        updateMany,
+        deleteMany,
         deleteDoc,
         updateDoc,
         updateOne,

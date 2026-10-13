@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "../layouts/AppLayout";
 import AdminPage from "../pages/AdminPage";
 import LoginPage from "../pages/LoginPage";
-import ManagerSwapsPage from "../pages/ManagerSwapsPage";
+import ManagerDashboardPage from "../pages/ManagerDashboardPage";
 import MyShiftsPage from "../pages/MyShiftsPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import ProfilePage from "../pages/ProfilePage";
@@ -15,7 +15,7 @@ import ProtectedRoute from "./ProtectedRoute";
 const HomeRedirect = () => {
     const user = useAuthStore((state) => state.user);
     if (user?.role === "admin") return <Navigate to="/admin" replace />;
-    if (user?.role === "manager") return <Navigate to="/schedule" replace />;
+    if (user?.role === "manager") return <Navigate to="/dashboard" replace />;
     if (user?.role === "employee") return <Navigate to="/my-shifts" replace />;
     return <Navigate to="/login" replace />;
 };
@@ -43,11 +43,9 @@ const AppRoutes = () => {
                     <Route
                         element={<ProtectedRoute allowedRoles={["manager"]} />}
                     >
+                        <Route path="/dashboard" element={<ManagerDashboardPage />} />
                         <Route path="/schedule" element={<SchedulePage />} />
-                        <Route
-                            path="/manager/swaps"
-                            element={<ManagerSwapsPage />}
-                        />
+                        <Route path="/manager/swaps" element={<Navigate to="/dashboard" replace />} />
                     </Route>
 
                     {/* Employee routes */}

@@ -1,80 +1,56 @@
 import type { ComplianceResult, SwapRequest } from "../types";
-import { addAuthHeaders, apiClient } from "./api";
+import { apiClient } from "./api";
 
 export async function getBoard(): Promise<SwapRequest[]> {
-    const res = await apiClient.get("/swaps/board", {
-        headers: addAuthHeaders(),
-    });
-    return res.data.data;
+    return (await apiClient.get("/swaps/board")).data.data;
+}
+
+export async function getManagerSwaps(): Promise<SwapRequest[]> {
+    return (await apiClient.get("/swaps/manager")).data.data;
+}
+
+export async function getMySwaps(): Promise<SwapRequest[]> {
+    return (await apiClient.get("/swaps/mine")).data.data;
 }
 
 export async function createSwap(
     shiftId: number,
     reason: string,
-): Promise<SwapRequest> {
-    const res = await apiClient.post(
-        "/swaps",
-        { shiftId, reason },
-        { headers: addAuthHeaders() },
-    );
-    return res.data.data;
+    weekNumber?: number,
+): Promise<void> {
+    await apiClient.post("/swaps", { shiftId, reason, weekNumber });
 }
 
 export async function publishSwap(id: string): Promise<void> {
-    await apiClient.patch(
-        `/swaps/${id}/publish`,
-        {},
-        { headers: addAuthHeaders() },
-    );
+    await apiClient.patch(`/swaps/${id}/publish`);
 }
 
 export async function rejectSwap(id: string): Promise<void> {
-    await apiClient.patch(
-        `/swaps/${id}/reject`,
-        {},
-        { headers: addAuthHeaders() },
-    );
+    await apiClient.patch(`/swaps/${id}/reject`);
 }
 
 export async function applySwap(id: string): Promise<void> {
-    await apiClient.post(
-        `/swaps/${id}/apply`,
-        {},
-        { headers: addAuthHeaders() },
-    );
+    await apiClient.post(`/swaps/${id}/apply`);
 }
 
 export async function approveApplicant(
     swapId: string,
     employeeCode: string,
 ): Promise<void> {
-    await apiClient.patch(
-        `/swaps/${swapId}/approve/${employeeCode}`,
-        {},
-        { headers: addAuthHeaders() },
-    );
+    await apiClient.patch(`/swaps/${swapId}/applicants/${employeeCode}/approve`);
 }
 
 export async function rejectApplicant(
     swapId: string,
     employeeCode: string,
 ): Promise<void> {
-    await apiClient.patch(
-        `/swaps/${swapId}/reject-applicant/${employeeCode}`,
-        {},
-        { headers: addAuthHeaders() },
-    );
+    await apiClient.patch(`/swaps/${swapId}/applicants/${employeeCode}/reject`);
 }
 
 export async function getCompliance(
     swapId: string,
     employeeCode: string,
-): Promise<ComplianceResult & { employeeCode: string; swapId: string }> {
-    const res = await apiClient.get(
-        `/swaps/${swapId}/compliance/${employeeCode}`,
-        {
-            headers: addAuthHeaders(),
-        },
-    );
-    return res.data.data;
+): Promise<ComplianceResult> {
+    return (await apiClient.get(`/swaps/${swapId}/compliance/${employeeCode}`))
+        .data.data;
 }

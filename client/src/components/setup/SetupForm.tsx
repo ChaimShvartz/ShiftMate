@@ -1,3 +1,4 @@
+import Logo from "../brand/Logo";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -40,11 +41,7 @@ const SetupForm = ({ onSubmit, loading, error }: SetupFormProps) => {
     return (
         <div className="setup-form-container" dir="rtl">
             <header className="setup-header">
-                <img
-                    src="/logo-horizontal.png"
-                    alt="ShiftMate"
-                    className="setup-logo-img"
-                />
+                <Logo size={48} />
                 <h2>הקמת מערכת ראשונית</h2>
                 <p>יצירת חשבון מנהל ראשי למערכת</p>
             </header>

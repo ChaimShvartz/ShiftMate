@@ -1,9 +1,10 @@
 import { throwHttpError } from "../utils/errors.js";
+import { israelNow } from "../utils/time.js";
 
 export const shiftsService = {
     createWeek(weekData, latestWeekDoc) {
         const now = new Date();
-        const isThursday = now.getDay() === 4;
+        const isThursday = israelNow(now).weekday === 4;
 
         if (!isThursday) {
             throwHttpError(

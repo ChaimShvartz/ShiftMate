@@ -16,7 +16,7 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
         if (user.role === "admin") return <Navigate to="/admin" replace />;
-        if (user.role === "manager") return <Navigate to="/schedule" replace />;
+        if (user.role === "manager") return <Navigate to="/dashboard" replace />;
         return <Navigate to="/my-shifts" replace />;
     }
 

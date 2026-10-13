@@ -1,87 +1,49 @@
-import type { ComplianceResult, SwapApplicant, SwapRequest } from "../../types";
+import type { SwapApplicant } from "../../types";
+import ComplianceBadge from "./ComplianceBadge";
 
 interface Props {
-    swapId: string;
     applicants: SwapApplicant[];
-    enrichedSwap: SwapRequest;
-    compliance: Record<string, ComplianceResult>;
-    onFetchCompliance: (swapId: string, employeeCode: string) => void;
+    busy?: boolean;
     onApprove: (employeeCode: string) => void;
     onReject: (employeeCode: string) => void;
 }
 
-const COMPLIANCE_ICON: Record<string, string> = {
-    ok: "🟢",
-    warning: "🟡",
-    violation: "🔴",
-};
-
-export default function ApplicantsList({
-    swapId,
-    applicants,
-    compliance,
-    onFetchCompliance,
-    onApprove,
-    onReject,
-}: Props) {
+export default function ApplicantsList({ applicants, busy, onApprove, onReject }: Props) {
     const pending = applicants.filter((a) => a.status === "pending");
 
     if (pending.length === 0) {
-        return <p className="applicants__empty">אין מועמדים ממתינים.</p>;
+        return <p className="applicants__empty">עדיין אין מועמדים ממתינים להחלטה.</p>;
     }
 
     return (
         <ul className="applicants-list">
-            {pending.map((applicant) => {
-                const key = `${swapId}:${applicant.employeeCode}`;
-                const result = compliance[key];
-
+            {pending.map((a) => {
+                const blocked = a.compliance?.status === "violation";
                 return (
-                    <li key={applicant.employeeCode} className="applicant-item">
-                        <span className="applicant-item__code">
-                            {applicant.employeeCode}
-                        </span>
-
-                        {result ? (
-                            <span
-                                className="applicant-item__compliance"
-                                title={result.details}
-                            >
-                                {COMPLIANCE_ICON[result.status]}{" "}
-                                {result.details}
-                            </span>
-                        ) : (
-                            <button
-                                className="applicant-item__check-btn"
-                                onClick={() =>
-                                    onFetchCompliance(
-                                        swapId,
-                                        applicant.employeeCode,
-                                    )
-                                }
-                            >
-                                בדיקת חוקיות
-                            </button>
-                        )}
-
+                    <li key={a.employeeCode} className="applicant-item">
+                        <div className="applicant-item__who">
+                            <span className="avatar avatar--sm">{(a.employeeName ?? a.employeeCode).slice(0, 1)}</span>
+                            <div>
+                                <strong>{a.employeeName ?? a.employeeCode}</strong>
+                                <small>#{a.employeeCode}</small>
+                            </div>
+                        </div>
+                        {a.compliance && <ComplianceBadge result={a.compliance} />}
                         <div className="applicant-item__actions">
                             <button
+                                type="button"
                                 className="applicant-item__btn applicant-item__btn--approve"
-                                onClick={() =>
-                                    onApprove(applicant.employeeCode)
-                                }
-                                disabled={result?.status === "violation"}
-                                title={
-                                    result?.status === "violation"
-                                        ? "לא ניתן לאשר: קיימת חריגה מחוקי העבודה"
-                                        : "אשר מועמד"
-                                }
+                                disabled={busy || blocked}
+                                title={blocked ? "לא ניתן לאשר: קיימת חריגה מחוקי העבודה" : "אשר מועמד"}
+                                onClick={() => onApprove(a.employeeCode)}
                             >
                                 ✓ אשר
                             </button>
                             <button
+                                type="button"
                                 className="applicant-item__btn applicant-item__btn--reject"
-                                onClick={() => onReject(applicant.employeeCode)}
+                                disabled={busy}
+                                onClick={() => onReject(a.employeeCode)}
                             >
                                 ✗ דחה
                             </button>

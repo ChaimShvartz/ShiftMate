@@ -4,6 +4,7 @@ import { getAllUsers } from "../api/users";
 import ExcelImportModal from "../components/manager/ExcelImportModal";
 import ShiftEditModal from "../components/manager/ShiftEditModal";
 import WeekScheduleView from "../components/manager/WeekScheduleView";
+import { useNotificationStore } from "../store/notificationStore";
 import type { Shift, ShiftWeek, User } from "../types";
 import { getErrorMessage } from "../utils/getErrorMessage";
 
@@ -51,16 +52,19 @@ const SchedulePage = () => {
         }
     };
 
+    const shiftsVersion = useNotificationStore((s) => s.shiftsVersion);
+    const currentWeek = state.week?.weekNumber;
     useEffect(() => {
-        loadData();
-    }, []);
+        void loadData(currentWeek ?? undefined);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [shiftsVersion]);
 
     const handleImportSuccess = (newWeek: ShiftWeek) => {
         setState((prev) => ({
             ...prev,
-            week: newWeek,
             feedback: `לוח המשמרות לשבוע ${newWeek.weekNumber} עודכן בהצלחה!`,
         }));
+        void loadData(newWeek.weekNumber);
     };
 
     const handleSaveShift = async (
@@ -81,7 +85,7 @@ const SchedulePage = () => {
                 feedback: `משמרת #${shiftId} עודכנה בהצלחה.`,
             }));
         } catch (err) {
-            throw new Error(getErrorMessage(err, "שגיאה בעדכון המשמרת"));
+            throw new Error(getErrorMessage(err, "שגיאה בעדכון המשמרת"), { cause: err });
         }
     };
 
@@ -133,6 +137,21 @@ const SchedulePage = () => {
             )}
             {state.error && (
                 <div className="feedback-banner error">{state.error}</div>
+            )}
+
+            {(state.week?.weeks?.length ?? 0) > 1 && (
+                <div className="week-switch" role="group" aria-label="בחירת שבוע">
+                    {state.week?.weeks?.map((w) => (
+                        <button
+                            key={w.weekNumber}
+                            type="button"
+                            className={w.weekNumber === state.week?.weekNumber ? "is-active" : ""}
+                            onClick={() => loadData(w.weekNumber)}
+                        >
+                            שבוע {w.weekNumber}
+                        </button>
+                    ))}
+                </div>
             )}
 
             {state.loading ? (

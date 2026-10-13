@@ -1,4 +1,6 @@
+import { useUiStore } from "../../store/uiStore";
 import type { Shift, ShiftWeek, User } from "../../types";
+import { fmtDateLong, fmtTimeRange } from "../../utils/datetime";
 
 interface WeekScheduleViewProps {
     week: ShiftWeek | null;
@@ -6,34 +8,6 @@ interface WeekScheduleViewProps {
     onEditShift: (shift: Shift) => void;
     onDeleteShift: (shiftId: number) => Promise<void>;
 }
-
-const formatTimeRange = (startIso: string, endIso: string) => {
-    try {
-        const start = new Date(startIso);
-        const end = new Date(endIso);
-        const formatTime = (d: Date) =>
-            d.toLocaleTimeString("he-IL", {
-                hour: "2-digit",
-                minute: "2-digit",
-            });
-        return `${formatTime(start)} - ${formatTime(end)}`;
-    } catch {
-        return "";
-    }
-};
-
-const formatDateHebrew = (isoDate: string) => {
-    try {
-        const d = new Date(isoDate);
-        return d.toLocaleDateString("he-IL", {
-            weekday: "long",
-            day: "numeric",
-            month: "numeric",
-        });
-    } catch {
-        return "";
-    }
-};
 
 const WeekScheduleView = ({
     week,
@@ -72,15 +46,17 @@ const WeekScheduleView = ({
 
     const sortedDayKeys = Array.from(shiftsByDay.keys()).sort();
 
-    const handleDelete = (shift: Shift) => {
+    const handleDelete = async (shift: Shift) => {
         const empName =
             employeeMap.get(shift.assignedEmployeeCode) ||
             `#${shift.assignedEmployeeCode}`;
-        if (
-            window.confirm(`האם אתה בטוח שברצונך למחוק משמרת זו של ${empName}?`)
-        ) {
-            onDeleteShift(shift.id);
-        }
+        const ok = await useUiStore.getState().confirm({
+            title: "מחיקת משמרת",
+            message: `למחוק את המשמרת של ${empName}? אם קיימת עליה בקשת החלפה — היא תיסגר.`,
+            confirmLabel: "מחק משמרת",
+            danger: true,
+        });
+        if (ok) await onDeleteShift(shift.id);
     };
 
     return (
@@ -96,7 +72,7 @@ const WeekScheduleView = ({
             <div className="days-columns-container">
                 {sortedDayKeys.map((dayKey) => {
                     const dayShifts = shiftsByDay.get(dayKey) || [];
-                    const dayTitle = formatDateHebrew(dayKey);
+                    const dayTitle = fmtDateLong(`${dayKey}T00:00:00Z`);
 
                     return (
                         <div key={dayKey} className="day-column">
@@ -121,7 +97,7 @@ const WeekScheduleView = ({
                                             <header className="shift-card-header">
                                                 <span className="shift-time">
                                                     ⏰{" "}
-                                                    {formatTimeRange(
+                                                    {fmtTimeRange(
                                                         shift.startTime,
                                                         shift.endTime,
                                                     )}

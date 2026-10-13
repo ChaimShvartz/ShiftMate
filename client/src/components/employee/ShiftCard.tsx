@@ -1,61 +1,49 @@
-import type { Shift } from "../../types";
+import type { Shift, SwapRequest } from "../../types";
+import { fmtDateShort, fmtTime, rulerSpan } from "../../utils/datetime";
 
 interface Props {
     shift: Shift;
+    swap?: SwapRequest;
+    past?: boolean;
     onRequestSwap?: (shift: Shift) => void;
 }
 
-function formatTime(iso: string): string {
-    return new Date(iso).toLocaleTimeString("he-IL", {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+function swapLabel(swap?: SwapRequest): string {
+    if (!swap) return "הוגשה בקשת החלפה";
+    if (swap.status === "pending_manager_publish") return "ממתין לאישור פרסום מהמנהל";
+    return `פורסם בבורסה · ${swap.applicantsCount} מועמדים`;
 }
 
-function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString("he-IL", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-    });
-}
-
-export default function ShiftCard({ shift, onRequestSwap }: Props) {
-    const isSwapPending = shift.status === "swap_pending";
+export default function ShiftCard({ shift, swap, past, onRequestSwap }: Props) {
+    const inSwap = shift.status === "swap_pending";
+    const span = rulerSpan(shift.startTime, shift.endTime);
+    const state = past ? "past" : inSwap ? "pending" : "scheduled";
+    const chip = past ? ["neutral", "הסתיימה"] : inSwap ? ["warning", "בהחלפה"] : ["success", "משובץ"];
 
     return (
-        <div
-            className={`shift-card ${isSwapPending ? "shift-card--pending" : ""}`}
-        >
-            <div className="shift-card__header">
-                <span className="shift-card__title">
-                    {shift.title || "משמרת"}
-                </span>
-                <span
-                    className={`shift-card__badge shift-card__badge--${shift.status}`}
-                >
-                    {isSwapPending ? "ממתין להחלפה" : "משובץ"}
-                </span>
+        <article className={`ticket ticket--${state}`}>
+            <div className="ticket__main">
+                <div className="ticket__head">
+                    <span className="ticket__title">{shift.title || "משמרת"}</span>
+                    <span className={`chip chip--${chip[0]}`}>{chip[1]}</span>
+                </div>
+                <span className="ticket__date">{fmtDateShort(shift.startTime)}</span>
+                <div className="ruler" aria-hidden>
+                    <span className="ruler__seg" style={{ left: `${span.left}%`, width: `${span.width}%` }} />
+                </div>
+                {onRequestSwap && !inSwap && !past && (
+                    <button type="button" className="ticket__swap-btn" onClick={() => onRequestSwap(shift)}>
+                        🔄 בקש החלפה
+                    </button>
+                )}
+                {inSwap && <p className="ticket__note">{swapLabel(swap)}</p>}
             </div>
-            <div className="shift-card__time">
-                <span className="shift-card__date">
-                    {formatDate(shift.startTime)}
-                </span>
-                <span className="shift-card__range">
-                    {formatTime(shift.startTime)} – {formatTime(shift.endTime)}
-                </span>
+            <div className="ticket__stub">
+                <b>{fmtTime(shift.startTime)}</b>
+                <i>↓</i>
+                <b>{fmtTime(shift.endTime)}</b>
+                <span className="ticket__stub-edge" />
             </div>
-            {onRequestSwap && !isSwapPending && (
-                <button
-                    className="shift-card__swap-btn"
-                    onClick={() => onRequestSwap(shift)}
-                >
-                    🔄 בקש החלפה
-                </button>
-            )}
-            {isSwapPending && (
-                <p className="shift-card__swap-notice">הוגשה בקשת החלפה</p>
-            )}
-        </div>
+        </article>
     );
 }

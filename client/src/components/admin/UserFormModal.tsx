@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../../utils/getErrorMessage";
 import React, { useState } from "react";
 import type { Role, Unit, User } from "../../types";
 
@@ -77,11 +78,11 @@ const UserFormModal = ({
                     createdUser: result,
                 });
             }
-        } catch (err: any) {
+        } catch (err) {
             setStatus((prev) => ({
                 ...prev,
                 loading: false,
-                error: err?.message || "שגיאה ביצירת משתמש",
+                error: getErrorMessage(err, "שגיאה ביצירת משתמש"),
             }));
         }
     };

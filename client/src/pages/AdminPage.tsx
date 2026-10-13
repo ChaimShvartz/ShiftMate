@@ -159,21 +159,39 @@ const AdminPage = () => {
     };
 
     const handleAddUnit = async (name: string) => {
-        const newUnit = await createUnit(name);
-        setState((prev) => ({
-            ...prev,
-            units: [...prev.units, newUnit],
-            feedback: `יחידה חדשה '${newUnit.name}' נוצרה בהצלחה`,
-        }));
+        try {
+            const newUnit = await createUnit(name);
+            setState((prev) => ({
+                ...prev,
+                units: [...prev.units, newUnit],
+                error: null,
+                feedback: `יחידה חדשה '${newUnit.name}' נוצרה בהצלחה`,
+            }));
+        } catch (err) {
+            setState((prev) => ({
+                ...prev,
+                feedback: null,
+                error: getErrorMessage(err, "שגיאה ביצירת היחידה"),
+            }));
+        }
     };
 
     const handleDeleteUnit = async (name: string) => {
-        await deleteUnit(name);
-        setState((prev) => ({
-            ...prev,
-            units: prev.units.filter((u) => u.name !== name),
-            feedback: `יחידה '${name}' נמחקה בהצלחה`,
-        }));
+        try {
+            await deleteUnit(name);
+            setState((prev) => ({
+                ...prev,
+                units: prev.units.filter((u) => u.name !== name),
+                error: null,
+                feedback: `יחידה '${name}' נמחקה בהצלחה`,
+            }));
+        } catch (err) {
+            setState((prev) => ({
+                ...prev,
+                feedback: null,
+                error: getErrorMessage(err, "שגיאה במחיקת היחידה"),
+            }));
+        }
     };
 
     return (

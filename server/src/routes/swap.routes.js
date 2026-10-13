@@ -2,10 +2,7 @@ import { Router } from "express";
 import { swapController } from "../controllers/swap.controller.js";
 import { authenticate, authorizeRole } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
-import {
-    approveApplicantSchema,
-    createSwapRequestSchema,
-} from "../models/swap.schema.js";
+import { createSwapRequestSchema } from "../models/swap.schema.js";
 
 const router = Router();
 
@@ -16,6 +13,14 @@ router.get(
     authorizeRole("manager", "employee"),
     swapController.getBoard,
 );
+
+router.get(
+    "/manager",
+    authorizeRole("manager"),
+    swapController.getManagerSwaps,
+);
+
+router.get("/mine", authorizeRole("employee"), swapController.getMySwaps);
 
 router.post(
     "/",
@@ -47,13 +52,6 @@ router.get(
 router.patch(
     "/:id/applicants/:employeeCode/approve",
     authorizeRole("manager"),
-    swapController.approveApplicant,
-);
-
-router.patch(
-    "/:id/approve",
-    authorizeRole("manager"),
-    validate(approveApplicantSchema),
     swapController.approveApplicant,
 );
 

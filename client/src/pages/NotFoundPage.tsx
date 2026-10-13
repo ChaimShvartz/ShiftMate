@@ -1,14 +1,11 @@
+import Logo from "../components/brand/Logo";
 import { Link } from "react-router-dom";
 
 const NotFoundPage = () => {
     return (
         <main className="not-found-page" dir="rtl">
             <div className="not-found-card">
-                <img
-                    src="/logo-icon.png"
-                    alt="ShiftMate"
-                    className="not-found-logo-icon"
-                />
+                <Logo size={64} showWord={false} />
                 <h1 className="not-found-code">404</h1>
                 <h2 className="not-found-title">העמוד לא נמצא</h2>
                 <p className="not-found-desc">

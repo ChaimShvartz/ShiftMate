@@ -22,7 +22,7 @@ const LoginForm = ({
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [name]: name === "employeeCode" ? value.replace(/\D/g, "") : value,
+            [name]: value,
         }));
     };
 
@@ -39,14 +39,14 @@ const LoginForm = ({
             {error && <div className="error-message">{error}</div>}
 
             <div className="form-group">
-                <label htmlFor="employeeCode">קוד עובד (6 ספרות)</label>
+                <label htmlFor="employeeCode">קוד עובד או אימייל</label>
                 <input
                     id="employeeCode"
                     name="employeeCode"
                     type="text"
                     required
-                    maxLength={6}
-                    pattern="[0-9]{6}"
+                    autoComplete="username"
+                    dir="ltr"
                     placeholder="123456"
                     value={formData.employeeCode}
                     onChange={handleChange}
@@ -60,6 +60,7 @@ const LoginForm = ({
                     name="password"
                     type="password"
                     required
+                    autoComplete="current-password"
                     placeholder="הזן סיסמה"
                     value={formData.password}
                     onChange={handleChange}

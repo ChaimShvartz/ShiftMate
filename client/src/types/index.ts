@@ -26,6 +26,11 @@ export interface Shift {
     status: ShiftStatus;
 }
 
+export interface WeekSummary {
+    weekNumber: number;
+    weekStartDate: string;
+}
+
 export interface ShiftWeek {
     _id?: string;
     unitName: string;
@@ -33,14 +38,17 @@ export interface ShiftWeek {
     weekStartDate: string;
     expiresAt: string;
     shifts: Shift[];
+    weeks?: WeekSummary[];
 }
 
 export type ApplicantStatus = "pending" | "approved" | "rejected";
 
 export interface SwapApplicant {
     employeeCode: string;
+    employeeName?: string;
     status: ApplicantStatus;
     appliedAt: string;
+    compliance?: ComplianceResult;
 }
 
 export type SwapRequestStatus =
@@ -61,13 +69,39 @@ export interface SwapRequest {
     applicants: SwapApplicant[];
     expiresAt: string;
     createdAt: string;
-    shiftDetails?: Shift;
+    shiftDetails?: Shift | null;
     requesterName?: string;
+    replacementName?: string | null;
+    applicantsCount: number;
 }
+
+export type ComplianceReason =
+    | "ok"
+    | "overtime_minor"
+    | "overlap"
+    | "rest"
+    | "overtime_major";
 
 export interface ComplianceResult {
     status: "ok" | "warning" | "violation";
-    details: string;
+    reason: ComplianceReason;
+    minRestHours: number | null;
+    totalWeeklyHours: number;
+    overtime: number;
+    maxWeeklyHours: number;
+}
+
+export type NotificationLevel = "info" | "success" | "warning" | "error";
+
+export interface AppNotification {
+    id: string;
+    type: string;
+    level: NotificationLevel;
+    title: string;
+    message: string;
+    read: boolean;
+    createdAt: string;
+    data?: { swapId?: string; weekNumber?: number; shiftId?: number };
 }
 
 export interface LoginResponse {

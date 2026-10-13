@@ -1,5 +1,6 @@
 import React from "react";
 import type { Unit, User } from "../../types";
+import { useUiStore } from "../../store/uiStore";
 import { getRoleLabel } from "../../utils/formatters";
 
 interface UsersTableProps {
@@ -31,14 +32,14 @@ const UsersTable = ({
         });
     };
 
-    const handleDelete = (user: User) => {
-        if (
-            window.confirm(
-                `האם אתה בטוח שברצונך למחוק את ${user.fullName} (#${user.employeeCode})?`,
-            )
-        ) {
-            onDeleteUser(user.employeeCode, user.fullName);
-        }
+    const handleDelete = async (user: User) => {
+        const ok = await useUiStore.getState().confirm({
+            title: "מחיקת משתמש",
+            message: `למחוק את ${user.fullName} (#${user.employeeCode})? הפעולה אינה ניתנת לביטול.`,
+            confirmLabel: "מחק",
+            danger: true,
+        });
+        if (ok) onDeleteUser(user.employeeCode, user.fullName);
     };
 
     return (

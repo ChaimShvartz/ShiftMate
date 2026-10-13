@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { Shift, User } from "../../types";
+import { getErrorMessage } from "../../utils/getErrorMessage";
 
 interface ShiftEditModalProps {
     isOpen: boolean;
@@ -20,19 +21,8 @@ interface ShiftEditModalProps {
 }
 
 const formatForDateTimeInput = (isoString?: string) => {
-    if (!isoString) return "";
-    try {
-        const d = new Date(isoString);
-        const pad = (n: number) => String(n).padStart(2, "0");
-        const year = d.getFullYear();
-        const month = pad(d.getMonth() + 1);
-        const day = pad(d.getDate());
-        const hours = pad(d.getHours());
-        const minutes = pad(d.getMinutes());
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-    } catch {
-        return "";
-    }
+    // Shift times are floating wall-clock values stored as UTC - never convert.
+    return isoString ? isoString.slice(0, 16) : "";
 };
 
 const initialForm = {
@@ -89,14 +79,14 @@ const ShiftEditModal = ({
                 title: formData.title.trim() || undefined,
                 assignedEmployeeCode:
                     formData.assignedEmployeeCode || undefined,
-                startTime: new Date(formData.startTime).toISOString(),
-                endTime: new Date(formData.endTime).toISOString(),
+                startTime: `${formData.startTime}:00.000Z`,
+                endTime: `${formData.endTime}:00.000Z`,
             });
             onClose();
-        } catch (err: any) {
+        } catch (err) {
             setStatus({
                 loading: false,
-                error: err?.message || "שגיאה בעדכון המשמרת",
+                error: getErrorMessage(err, "שגיאה בעדכון המשמרת"),
             });
         }
     };
