@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import type { Shift, User } from "../../types";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Edit2, Clock, User, Save } from "lucide-react";
+import type { Shift, User as UserType } from "../../types";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 
 interface ShiftEditModalProps {
@@ -7,7 +9,7 @@ interface ShiftEditModalProps {
     onClose: () => void;
     shift: Shift | null;
     weekNumber: number;
-    employees: User[];
+    employees: UserType[];
     onSave: (
         weekNumber: number,
         shiftId: number,
@@ -21,7 +23,6 @@ interface ShiftEditModalProps {
 }
 
 const formatForDateTimeInput = (isoString?: string) => {
-    // Shift times are floating wall-clock values stored as UTC - never convert.
     return isoString ? isoString.slice(0, 16) : "";
 };
 
@@ -92,102 +93,142 @@ const ShiftEditModal = ({
     };
 
     return (
-        <div className="modal-backdrop" dir="rtl">
-            <div className="modal-content">
-                <header className="modal-header">
-                    <h3>עריכת משמרת #{shift.id}</h3>
-                    <button
-                        type="button"
-                        className="btn-close"
-                        onClick={onClose}
-                    >
-                        ✕
-                    </button>
-                </header>
-
-                {status.error && (
-                    <div className="error-message">{status.error}</div>
-                )}
-
-                <form onSubmit={handleSubmit} className="modal-form">
-                    <div className="form-group">
-                        <label htmlFor="shiftTitle">
-                            כותרת משמרת (אופציונלי)
-                        </label>
-                        <input
-                            id="shiftTitle"
-                            name="title"
-                            type="text"
-                            placeholder="לדוגמה: משמרת בוקר"
-                            value={formData.title}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="assignedEmployee">עובד משובץ</label>
-                        <select
-                            id="assignedEmployee"
-                            name="assignedEmployeeCode"
-                            value={formData.assignedEmployeeCode}
-                            onChange={handleChange}
-                            required
-                        >
-                            <option value="">בחר עובד מהיחידה...</option>
-                            {employees.map((emp) => (
-                                <option
-                                    key={emp.employeeCode}
-                                    value={emp.employeeCode}
-                                >
-                                    {emp.fullName} (#{emp.employeeCode})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="shiftStartTime">מועד התחלה</label>
-                        <input
-                            id="shiftStartTime"
-                            name="startTime"
-                            type="datetime-local"
-                            required
-                            value={formData.startTime}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="shiftEndTime">מועד סיום</label>
-                        <input
-                            id="shiftEndTime"
-                            name="endTime"
-                            type="datetime-local"
-                            required
-                            value={formData.endTime}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="modal-actions">
+        <AnimatePresence>
+            <motion.div
+                className="modal-backdrop"
+                dir="rtl"
+                onClick={onClose}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+            >
+                <motion.div
+                    className="modal-content"
+                    onClick={(e) => e.stopPropagation()}
+                    initial={{ opacity: 0, scale: 0.94, y: 12 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                >
+                    <header className="modal-header">
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <Edit2 size={18} style={{ color: "var(--brand)" }} />
+                            <h3>עריכת משמרת #{shift.id}</h3>
+                        </div>
                         <button
                             type="button"
-                            className="btn-cancel"
+                            className="btn-close"
                             onClick={onClose}
                         >
-                            ביטול
+                            <X size={16} />
                         </button>
-                        <button
-                            type="submit"
-                            disabled={status.loading}
-                            className="btn-submit"
-                        >
-                            {status.loading ? "שומר..." : "שמור שינויים"}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                    </header>
+
+                    {status.error && (
+                        <div className="error-message">{status.error}</div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="modal-form">
+                        <div className="form-group">
+                            <label htmlFor="shiftTitle">
+                                כותרת משמרת (אופציונלי)
+                            </label>
+                            <input
+                                id="shiftTitle"
+                                name="title"
+                                type="text"
+                                placeholder="לדוגמה: משמרת בוקר, תורנות מוקד..."
+                                value={formData.title}
+                                onChange={handleChange}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="assignedEmployee">
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                    <User size={13} style={{ opacity: 0.6 }} />
+                                    <span>עובד משובץ</span>
+                                </span>
+                            </label>
+                            <select
+                                id="assignedEmployee"
+                                name="assignedEmployeeCode"
+                                value={formData.assignedEmployeeCode}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">בחר עובד מהיחידה...</option>
+                                {employees.map((emp) => (
+                                    <option
+                                        key={emp.employeeCode}
+                                        value={emp.employeeCode}
+                                    >
+                                        {emp.fullName} (#{emp.employeeCode})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label htmlFor="shiftStartTime">
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                        <Clock size={13} style={{ opacity: 0.6 }} />
+                                        <span>מועד התחלה</span>
+                                    </span>
+                                </label>
+                                <input
+                                    id="shiftStartTime"
+                                    name="startTime"
+                                    type="datetime-local"
+                                    required
+                                    value={formData.startTime}
+                                    onChange={handleChange}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="shiftEndTime">
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                        <Clock size={13} style={{ opacity: 0.6 }} />
+                                        <span>מועד סיום</span>
+                                    </span>
+                                </label>
+                                <input
+                                    id="shiftEndTime"
+                                    name="endTime"
+                                    type="datetime-local"
+                                    required
+                                    value={formData.endTime}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="modal-actions">
+                            <button
+                                type="button"
+                                className="btn-cancel"
+                                onClick={onClose}
+                            >
+                                ביטול
+                            </button>
+                            <motion.button
+                                type="submit"
+                                disabled={status.loading}
+                                className="btn-submit"
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                    <Save size={15} />
+                                    <span>{status.loading ? "שומר..." : "שמור שינויים"}</span>
+                                </span>
+                            </motion.button>
+                        </div>
+                    </form>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
     );
 };
 

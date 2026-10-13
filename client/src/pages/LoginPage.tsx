@@ -2,6 +2,7 @@ import ThemeToggle from "../components/ui/ThemeToggle";
 import Logo from "../components/brand/Logo";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { getSetupStatus } from "../api/setup";
 import LoginForm from "../components/auth/LoginForm";
 import { useAuthStore } from "../store/authStore";
@@ -79,24 +80,31 @@ const LoginPage = () => {
 
     return (
         <main className="login-page" dir="rtl">
-            <div className="login-bg-glow login-bg-glow--1" />
-            <div className="login-bg-glow login-bg-glow--2" />
             <div className="login-theme">
                 <ThemeToggle />
             </div>
-            <div className="login-card">
+            <motion.div
+                className="login-card"
+                initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            >
                 <header className="login-header">
-                    <Logo size={52} />
+                    <Logo size={48} />
                     <p className="login-subtitle">
-                        מערכת חכמה לניהול משמרות, עובדים וחילופים
+                        מערכת מתקדמת לניהול עובדים, משמרות וחילופים בזמן אמת
                     </p>
                 </header>
 
                 {state.isSystemInitialized === false && (
-                    <div className="system-uninitialized-banner">
+                    <motion.div
+                        className="system-uninitialized-banner"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
                         <span>המערכת עדיין אינה מוגדרת. </span>
                         <Link to="/setup">הגדר מנהל ראשי ראשוני</Link>
-                    </div>
+                    </motion.div>
                 )}
 
                 <LoginForm
@@ -105,7 +113,7 @@ const LoginPage = () => {
                     error={state.error}
                     initialEmployeeCode={location.state?.employeeCode || ""}
                 />
-            </div>
+            </motion.div>
         </main>
     );
 };

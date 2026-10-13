@@ -1,15 +1,23 @@
-import { gsap } from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Bell,
+    CheckCircle2,
+    AlertTriangle,
+    AlertOctagon,
+    Info,
+    CheckCheck,
+} from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useNotificationStore } from "../../store/notificationStore";
 import { timeAgo } from "../../utils/datetime";
 
-const ICONS: Record<string, string> = {
-    info: "🔔",
-    success: "✅",
-    warning: "⚠️",
-    error: "⛔",
+const ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+    info: Info,
+    success: CheckCircle2,
+    warning: AlertTriangle,
+    error: AlertOctagon,
 };
 
 export default function NotificationBell() {
@@ -34,15 +42,6 @@ export default function NotificationBell() {
         };
     }, [open]);
 
-    const btnRef = useRef<HTMLButtonElement>(null);
-    const prevUnread = useRef(unread);
-    useEffect(() => {
-        if (unread > prevUnread.current && btnRef.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-            gsap.fromTo(btnRef.current, { rotate: -18 }, { rotate: 0, duration: 1, ease: "elastic.out(1, 0.35)", clearProps: "transform" });
-        }
-        prevUnread.current = unread;
-    }, [unread]);
-
     const toggle = () => {
         setOpen((o) => !o);
         if (!open && unread > 0) void markAllRead();
@@ -53,66 +52,107 @@ export default function NotificationBell() {
         if (role === "manager") {
             navigate(type.startsWith("import") || type.startsWith("shift") ? "/schedule" : "/dashboard");
         } else if (role === "employee") {
-            navigate(type === "shift_awarded" || type === "shift_removed" || type.startsWith("shift") || type === "import_completed" ? "/my-shifts" : "/swaps");
+            navigate(
+                type === "shift_awarded" ||
+                type === "shift_removed" ||
+                type.startsWith("shift") ||
+                type === "import_completed"
+                    ? "/my-shifts"
+                    : "/swaps",
+            );
         }
     };
 
     return (
         <div className="bell" ref={ref}>
-            <button
-                ref={btnRef}
+            <motion.button
                 type="button"
                 className="icon-btn"
                 aria-label={`התראות${unread ? ` (${unread} חדשות)` : ""}`}
                 aria-expanded={open}
                 onClick={toggle}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
             >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-                </svg>
+                <Bell size={18} />
                 {unread > 0 && (
-                    <span className="bell__badge">{unread > 9 ? "9+" : unread}</span>
+                    <motion.span
+                        className="bell__badge"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                    >
+                        {unread > 9 ? "9+" : unread}
+                    </motion.span>
                 )}
-                <span className={`bell__dot ${connected ? "is-live" : ""}`} title={connected ? "מחובר בזמן אמת" : "מתחבר מחדש…"} />
-            </button>
+                <span
+                    className={`bell__dot ${connected ? "is-live" : ""}`}
+                    title={connected ? "מחובר בזמן אמת" : "מתחבר מחדש…"}
+                />
+            </motion.button>
 
-            {open && (
-                <div className="bell__panel" role="dialog" aria-label="התראות">
-                    <header className="bell__head">
-                        <strong>התראות</strong>
-                        <span className={`live-pill ${connected ? "is-live" : ""}`}>
-                            {connected ? "● בזמן אמת" : "○ לא מחובר"}
-                        </span>
-                        {items.length > 0 && (
-                            <button type="button" className="link-btn" onClick={() => void clearAll()}>
-                                נקה הכל
-                            </button>
-                        )}
-                    </header>
-                    <ul className="bell__list">
-                        {items.length === 0 && (
-                            <li className="bell__empty">אין התראות חדשות 🎉</li>
-                        )}
-                        {items.map((n) => (
-                            <li key={n.id}>
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        className="bell__panel"
+                        role="dialog"
+                        aria-label="התראות"
+                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                        transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                    >
+                        <header className="bell__head">
+                            <strong>התראות מערכת</strong>
+                            <span className={`live-pill ${connected ? "is-live" : ""}`}>
+                                {connected ? "● מחובר" : "○ מתחבר..."}
+                            </span>
+                            {items.length > 0 && (
                                 <button
                                     type="button"
-                                    className={`bell__item bell__item--${n.level} ${n.read ? "" : "is-unread"}`}
-                                    onClick={() => go(n.type)}
+                                    className="link-btn"
+                                    onClick={() => void clearAll()}
                                 >
-                                    <span className="bell__icon">{ICONS[n.level]}</span>
-                                    <span className="bell__text">
-                                        <strong>{n.title}</strong>
-                                        <span>{n.message}</span>
-                                        <time>{timeAgo(n.createdAt)}</time>
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                        <CheckCheck size={13} />
+                                        <span>נקה הכל</span>
                                     </span>
                                 </button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+                            )}
+                        </header>
+                        <ul className="bell__list">
+                            {items.length === 0 && (
+                                <li className="bell__empty">
+                                    אין התראות חדשות כרגע ✨
+                                </li>
+                            )}
+                            {items.map((n) => {
+                                const Icon = ICONS[n.level] || Info;
+                                return (
+                                    <li key={n.id}>
+                                        <button
+                                            type="button"
+                                            className={`bell__item bell__item--${n.level} ${
+                                                n.read ? "" : "is-unread"
+                                            }`}
+                                            onClick={() => go(n.type)}
+                                        >
+                                            <span className="bell__icon">
+                                                <Icon size={16} />
+                                            </span>
+                                            <span className="bell__text">
+                                                <strong>{n.title}</strong>
+                                                <span>{n.message}</span>
+                                                <time>{timeAgo(n.createdAt)}</time>
+                                            </span>
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

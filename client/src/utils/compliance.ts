@@ -9,14 +9,14 @@ export const COMPLIANCE_LABEL = {
 export function complianceText(c: ComplianceResult): string {
     switch (c.reason) {
         case "overlap":
-            return "חפיפה עם משמרת קיימת של העובד";
+            return "חפיפה עם משמרת קיימת";
         case "rest":
-            return `מנוחה של ${c.minRestHours ?? 0} שעות בלבד בין משמרות (נדרש 8 לפחות)`;
+            return `מנוחה קצרה: ${c.minRestHours ?? 0} שע' (נדרש 8)`;
         case "overtime_major":
-            return `חריגה של ${c.overtime} שעות מהמגבלה השבועית (${c.totalWeeklyHours}/${c.maxWeeklyHours}) — מעל 4 שעות`;
+            return `חריגה גדולה (+${c.overtime} שע' מעל המגבלה)`;
         case "overtime_minor":
-            return `חריגה קלה של ${c.overtime} שעות מהמגבלה השבועית (${c.totalWeeklyHours}/${c.maxWeeklyHours})`;
+            return `חריגה קלה (+${c.overtime} שע' מעל המגבלה)`;
         default:
-            return `מנוחה תקינה, ${c.totalWeeklyHours}/${c.maxWeeklyHours} שעות שבועיות`;
+            return `${c.totalWeeklyHours}/${c.maxWeeklyHours} שעות שבועיות`;
     }
 }

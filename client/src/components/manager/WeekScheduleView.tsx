@@ -1,10 +1,12 @@
+import { motion } from "framer-motion";
+import { Clock, User, Edit2, Trash2, Calendar } from "lucide-react";
 import { useUiStore } from "../../store/uiStore";
-import type { Shift, ShiftWeek, User } from "../../types";
+import type { Shift, ShiftWeek, User as UserType } from "../../types";
 import { fmtDateLong, fmtTimeRange } from "../../utils/datetime";
 
 interface WeekScheduleViewProps {
     week: ShiftWeek | null;
-    employees: User[];
+    employees: UserType[];
     onEditShift: (shift: Shift) => void;
     onDeleteShift: (shiftId: number) => Promise<void>;
 }
@@ -18,11 +20,13 @@ const WeekScheduleView = ({
     if (!week || !week.shifts || week.shifts.length === 0) {
         return (
             <div className="empty-schedule-card">
-                <span className="empty-icon">📅</span>
+                <span className="empty-icon">
+                    <Calendar size={40} style={{ color: "var(--brand)" }} />
+                </span>
                 <h3>אין משמרות להצגה בשבוע זה</h3>
                 <p>
                     לא נמצאו משמרות עבור היחידה. ניתן להעלות קובץ שיבוץ באקסל
-                    ביום חמישי.
+                    בכל עת.
                 </p>
             </div>
         );
@@ -33,7 +37,6 @@ const WeekScheduleView = ({
         employeeMap.set(emp.employeeCode, emp.fullName);
     });
 
-    // Group shifts by date string
     const shiftsByDay = new Map<string, Shift[]>();
     week.shifts.forEach((shift) => {
         const dayKey = shift.startTime
@@ -90,17 +93,22 @@ const WeekScheduleView = ({
                                         `עובד #${shift.assignedEmployeeCode}`;
 
                                     return (
-                                        <article
+                                        <motion.article
                                             key={shift.id}
                                             className={`shift-card status-${shift.status}`}
+                                            whileHover={{ y: -3 }}
+                                            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                                            layout
                                         >
                                             <header className="shift-card-header">
-                                                <span className="shift-time">
-                                                    ⏰{" "}
-                                                    {fmtTimeRange(
-                                                        shift.startTime,
-                                                        shift.endTime,
-                                                    )}
+                                                <span className="shift-time" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                                    <Clock size={13} style={{ opacity: 0.6 }} />
+                                                    <span>
+                                                        {fmtTimeRange(
+                                                            shift.startTime,
+                                                            shift.endTime,
+                                                        )}
+                                                    </span>
                                                 </span>
                                                 <span
                                                     className={`shift-badge badge-${shift.status}`}
@@ -118,8 +126,8 @@ const WeekScheduleView = ({
                                                         {shift.title}
                                                     </h5>
                                                 )}
-                                                <div className="shift-employee-info">
-                                                    👤{" "}
+                                                <div className="shift-employee-info" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                                    <User size={13} style={{ opacity: 0.6 }} />
                                                     <strong>
                                                         {employeeName}
                                                     </strong>
@@ -134,26 +142,34 @@ const WeekScheduleView = ({
                                             </div>
 
                                             <footer className="shift-card-actions">
-                                                <button
+                                                <motion.button
                                                     type="button"
                                                     className="btn-edit-shift"
                                                     onClick={() =>
                                                         onEditShift(shift)
                                                     }
+                                                    whileTap={{ scale: 0.95 }}
                                                 >
-                                                    ערוך
-                                                </button>
-                                                <button
+                                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                                        <Edit2 size={12} />
+                                                        <span>ערוך</span>
+                                                    </span>
+                                                </motion.button>
+                                                <motion.button
                                                     type="button"
                                                     className="btn-delete-shift"
                                                     onClick={() =>
                                                         handleDelete(shift)
                                                     }
+                                                    whileTap={{ scale: 0.95 }}
                                                 >
-                                                    מחק
-                                                </button>
+                                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                                        <Trash2 size={12} />
+                                                        <span>מחק</span>
+                                                    </span>
+                                                </motion.button>
                                             </footer>
-                                        </article>
+                                        </motion.article>
                                     );
                                 })}
                             </div>

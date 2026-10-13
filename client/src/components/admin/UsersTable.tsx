@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { UserPlus, Edit2, ArrowRightLeft, Trash2, RotateCcw, ArrowUpDown } from "lucide-react";
 import type { Unit, User } from "../../types";
 import { useUiStore } from "../../store/uiStore";
 import { getRoleLabel } from "../../utils/formatters";
@@ -24,6 +26,28 @@ const UsersTable = ({
     onOpenEditUser,
     onOpenAddUser,
 }: UsersTableProps) => {
+    const [sortField, setSortField] = useState<"role" | "unitName" | "fullName" | "employeeCode" | null>(null);
+    const [sortAsc, setSortAsc] = useState<boolean>(true);
+
+    const handleSort = (field: "role" | "unitName" | "fullName" | "employeeCode") => {
+        if (sortField === field) {
+            setSortAsc(!sortAsc);
+        } else {
+            setSortField(field);
+            setSortAsc(true);
+        }
+    };
+
+    const sortedUsers = useMemo(() => {
+        if (!sortField) return users;
+        return [...users].sort((a, b) => {
+            const valA = (a[sortField] ?? "").toString();
+            const valB = (b[sortField] ?? "").toString();
+            const cmp = valA.localeCompare(valB, "he");
+            return sortAsc ? cmp : -cmp;
+        });
+    }, [users, sortField, sortAsc]);
+
     const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target;
         onFilterChange({
@@ -49,13 +73,16 @@ const UsersTable = ({
                     <h2>ניהול משתמשים</h2>
                     <p>צפייה, סינון, הוספה ועריכה של משתמשי המערכת</p>
                 </div>
-                <button
+                <motion.button
                     type="button"
                     className="btn-primary"
                     onClick={onOpenAddUser}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                 >
-                    + הוסף משתמש חדש
-                </button>
+                    <UserPlus size={16} />
+                    <span>הוסף משתמש חדש</span>
+                </motion.button>
             </header>
 
             <div className="users-filters-bar">
@@ -99,13 +126,16 @@ const UsersTable = ({
                             onFilterChange({ unitName: "", role: "" })
                         }
                     >
-                        איפוס סינונים
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            <RotateCcw size={13} />
+                            <span>איפוס סינונים</span>
+                        </span>
                     </button>
                 )}
             </div>
 
             <div className="users-table-container">
-                {users.length === 0 ? (
+                {sortedUsers.length === 0 ? (
                     <p className="empty-state">
                         לא נמצאו משתמשים תואמים לסינון.
                     </p>
@@ -113,10 +143,30 @@ const UsersTable = ({
                     <table className="users-table">
                         <thead>
                             <tr>
-                                <th>קוד עובד</th>
-                                <th>שם מלא</th>
-                                <th>תפקיד</th>
-                                <th>יחידה</th>
+                                <th onClick={() => handleSort("employeeCode")} style={{ cursor: "pointer", userSelect: "none" }}>
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                        <span>קוד עובד</span>
+                                        <ArrowUpDown size={12} style={{ opacity: sortField === "employeeCode" ? 1 : 0.4 }} />
+                                    </span>
+                                </th>
+                                <th onClick={() => handleSort("fullName")} style={{ cursor: "pointer", userSelect: "none" }}>
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                        <span>שם מלא</span>
+                                        <ArrowUpDown size={12} style={{ opacity: sortField === "fullName" ? 1 : 0.4 }} />
+                                    </span>
+                                </th>
+                                <th onClick={() => handleSort("role")} style={{ cursor: "pointer", userSelect: "none" }}>
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                        <span>תפקיד</span>
+                                        <ArrowUpDown size={12} style={{ opacity: sortField === "role" ? 1 : 0.4 }} />
+                                    </span>
+                                </th>
+                                <th onClick={() => handleSort("unitName")} style={{ cursor: "pointer", userSelect: "none" }}>
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                        <span>יחידה</span>
+                                        <ArrowUpDown size={12} style={{ opacity: sortField === "unitName" ? 1 : 0.4 }} />
+                                    </span>
+                                </th>
                                 <th>טלפון</th>
                                 <th>אימייל</th>
                                 <th>שעות/שבוע</th>
@@ -124,7 +174,7 @@ const UsersTable = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {users.map((u) => (
+                            {sortedUsers.map((u) => (
                                 <tr key={u.employeeCode}>
                                     <td className="code-cell">
                                         #{u.employeeCode}
@@ -146,42 +196,54 @@ const UsersTable = ({
                                             u.unitName || "—"
                                         )}
                                     </td>
-                                    <td>{u.phone}</td>
+                                    <td style={{ direction: "ltr", textAlign: "right" }}>{u.phone}</td>
                                     <td>{u.email}</td>
-                                    <td>
+                                    <td style={{ fontVariantNumeric: "tabular-nums" }}>
                                         {u.role === "employee"
                                             ? `${u.maxWeeklyHours || 40} שע'`
                                             : "—"}
                                     </td>
                                     <td className="actions-cell">
-                                        <button
+                                        <motion.button
                                             type="button"
                                             className="btn-edit"
                                             onClick={() => onOpenEditUser(u)}
+                                            whileTap={{ scale: 0.95 }}
                                         >
-                                            ערוך
-                                        </button>
+                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                                <Edit2 size={12} />
+                                                <span>ערוך</span>
+                                            </span>
+                                        </motion.button>
 
                                         {u.role === "manager" && (
-                                            <button
+                                            <motion.button
                                                 type="button"
                                                 className="btn-replace"
                                                 onClick={() =>
                                                     onOpenReplaceManager(u)
                                                 }
+                                                whileTap={{ scale: 0.95 }}
                                             >
-                                                החלף מנהל
-                                            </button>
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                                    <ArrowRightLeft size={12} />
+                                                    <span>החלף מנהל</span>
+                                                </span>
+                                            </motion.button>
                                         )}
 
                                         {u.role !== "admin" && (
-                                            <button
+                                            <motion.button
                                                 type="button"
                                                 className="btn-delete"
                                                 onClick={() => handleDelete(u)}
+                                                whileTap={{ scale: 0.95 }}
                                             >
-                                                מחק
-                                            </button>
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                                    <Trash2 size={12} />
+                                                    <span>מחק</span>
+                                                </span>
+                                            </motion.button>
                                         )}
                                     </td>
                                 </tr>

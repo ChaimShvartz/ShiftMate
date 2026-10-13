@@ -34,9 +34,25 @@ export const useUiStore = create<UiState>((set, get) => ({
     confirmRequest: null,
 
     addToast: (message, type = "info") => {
+        if (!message || !message.trim()) return;
+        const norm = (s: string) => s.replace(/[\s\-_—:.,'"]/g, "").toLowerCase();
+        const normMsg = norm(message);
+
+        // Drop duplicate or overlapping toasts that are already on screen
+        const isDuplicate = get().toasts.some((t) => {
+            const normExisting = norm(t.message);
+            return (
+                normExisting === normMsg ||
+                (normMsg.length > 6 && normExisting.includes(normMsg)) ||
+                (normExisting.length > 6 && normMsg.includes(normExisting))
+            );
+        });
+
+        if (isDuplicate) return;
+
         const id = `${Date.now()}-${Math.random()}`;
         set((s) => ({ toasts: [...s.toasts.slice(-3), { id, message, type }] }));
-        setTimeout(() => get().removeToast(id), 5000);
+        setTimeout(() => get().removeToast(id), 4500);
     },
 
     removeToast: (id) =>

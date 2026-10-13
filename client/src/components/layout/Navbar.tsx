@@ -1,4 +1,12 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+    Calendar,
+    ArrowLeftRight,
+    LayoutDashboard,
+    Shield,
+    LogOut,
+} from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useNotificationStore } from "../../store/notificationStore";
 import { getRoleLabel } from "../../utils/formatters";
@@ -6,18 +14,21 @@ import Logo from "../brand/Logo";
 import NotificationBell from "../notifications/NotificationBell";
 import ThemeToggle from "../ui/ThemeToggle";
 
-const linkClass = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "nav-link active" : "nav-link";
+interface NavItem {
+    to: string;
+    label: string;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+}
 
-const NAV: Record<string, { to: string; label: string }[]> = {
-    admin: [{ to: "/admin", label: "ניהול מערכת" }],
+const NAV: Record<string, NavItem[]> = {
+    admin: [{ to: "/admin", label: "ניהול מערכת", icon: Shield }],
     manager: [
-        { to: "/dashboard", label: "דאשבורד" },
-        { to: "/schedule", label: "לוח משמרות" },
+        { to: "/dashboard", label: "דאשבורד", icon: LayoutDashboard },
+        { to: "/schedule", label: "לוח משמרות", icon: Calendar },
     ],
     employee: [
-        { to: "/my-shifts", label: "המשמרות שלי" },
-        { to: "/swaps", label: "בורסת משמרות" },
+        { to: "/my-shifts", label: "המשמרות שלי", icon: Calendar },
+        { to: "/swaps", label: "בורסת משמרות", icon: ArrowLeftRight },
     ],
 };
 
@@ -41,6 +52,8 @@ export default function Navbar() {
         .slice(0, 2)
         .join("");
 
+    const navLinks = NAV[user.role] ?? [];
+
     return (
         <header className="app-header">
             <div className="app-header__inner">
@@ -49,11 +62,36 @@ export default function Navbar() {
                 </Link>
 
                 <nav className="header-nav" aria-label="ניווט ראשי">
-                    {NAV[user.role].map((l) => (
-                        <NavLink key={l.to} to={l.to} className={linkClass}>
-                            {l.label}
-                        </NavLink>
-                    ))}
+                    {navLinks.map((l) => {
+                        const Icon = l.icon;
+                        return (
+                            <NavLink
+                                key={l.to}
+                                to={l.to}
+                                className={({ isActive }) =>
+                                    `nav-link ${isActive ? "active" : ""}`
+                                }
+                            >
+                                {({ isActive }) => (
+                                    <>
+                                        <Icon size={16} />
+                                        <span>{l.label}</span>
+                                        {isActive && (
+                                            <motion.span
+                                                layoutId="navbar-indicator"
+                                                className="nav-indicator"
+                                                transition={{
+                                                    type: "spring",
+                                                    stiffness: 350,
+                                                    damping: 30,
+                                                }}
+                                            />
+                                        )}
+                                    </>
+                                )}
+                            </NavLink>
+                        );
+                    })}
                 </nav>
 
                 <div className="header-actions">
@@ -69,9 +107,17 @@ export default function Navbar() {
                             </small>
                         </span>
                     </NavLink>
-                    <button type="button" onClick={handleLogout} className="btn-logout">
-                        יציאה
-                    </button>
+                    <motion.button
+                        type="button"
+                        onClick={handleLogout}
+                        className="btn-logout"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        title="התנתק מהמערכת"
+                    >
+                        <LogOut size={14} />
+                        <span>יציאה</span>
+                    </motion.button>
                 </div>
             </div>
         </header>

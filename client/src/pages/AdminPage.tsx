@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Building2, UserCheck, Users, Settings } from "lucide-react";
 import { createUnit, deleteUnit, getAllUnits } from "../api/units";
 import {
     createUser,
@@ -70,6 +72,7 @@ const AdminPage = () => {
 
     useEffect(() => {
         loadData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleFilterChange = (filters: {
@@ -195,10 +198,19 @@ const AdminPage = () => {
     };
 
     return (
-        <div className="admin-page-container" dir="rtl">
+        <motion.div
+            className="admin-page-container"
+            dir="rtl"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        >
             <header className="admin-header">
                 <div className="admin-title">
-                    <h1>⚙️ ניהול מערכת ShiftMate</h1>
+                    <h1 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <Settings size={28} style={{ color: "var(--brand)" }} />
+                        <span>ניהול מערכת ShiftMate</span>
+                    </h1>
                     <p>
                         פאנל שליטה ראשי: ניהול עובדים, מנהלים ויחידות ארגוניות
                     </p>
@@ -206,31 +218,51 @@ const AdminPage = () => {
             </header>
 
             <section className="admin-stats-grid" aria-label="נתוני מערכת">
-                <div className="admin-stat-card">
-                    <div className="admin-stat-icon admin-stat-icon--units">🏢</div>
+                <motion.div
+                    className="admin-stat-card"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                >
+                    <div className="admin-stat-icon admin-stat-icon--units">
+                        <Building2 size={24} />
+                    </div>
                     <div className="admin-stat-info">
                         <span className="admin-stat-value">{state.units.length}</span>
                         <span className="admin-stat-label">יחידות פעילות</span>
                     </div>
-                </div>
-                <div className="admin-stat-card">
-                    <div className="admin-stat-icon admin-stat-icon--managers">👔</div>
+                </motion.div>
+
+                <motion.div
+                    className="admin-stat-card"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                >
+                    <div className="admin-stat-icon admin-stat-icon--managers">
+                        <UserCheck size={24} />
+                    </div>
                     <div className="admin-stat-info">
                         <span className="admin-stat-value">
                             {state.users.filter((u) => u.role === "manager").length}
                         </span>
                         <span className="admin-stat-label">מנהלי יחידות</span>
                     </div>
-                </div>
-                <div className="admin-stat-card">
-                    <div className="admin-stat-icon admin-stat-icon--employees">👥</div>
+                </motion.div>
+
+                <motion.div
+                    className="admin-stat-card"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                >
+                    <div className="admin-stat-icon admin-stat-icon--employees">
+                        <Users size={24} />
+                    </div>
                     <div className="admin-stat-info">
                         <span className="admin-stat-value">
                             {state.users.filter((u) => u.role === "employee").length}
                         </span>
                         <span className="admin-stat-label">עובדים משובצים</span>
                     </div>
-                </div>
+                </motion.div>
             </section>
 
             {state.feedback && (
@@ -268,19 +300,33 @@ const AdminPage = () => {
                     type="button"
                     className={`tab-btn ${state.activeTab === "users" ? "active" : ""}`}
                     onClick={() =>
-                        setState((prev) => ({ ...prev, activeTab: "users" }))
+                        setState((prev) => ({ ...prev, activeTab: "users", error: null }))
                     }
                 >
-                    👥 ניהול משתמשים ({state.users.length})
+                    {state.activeTab === "users" && (
+                        <motion.span
+                            layoutId="admin-active-tab-pill"
+                            className="tab-active-indicator"
+                            transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                        />
+                    )}
+                    <span className="tab-label">👥 ניהול משתמשים ({state.users.length})</span>
                 </button>
                 <button
                     type="button"
                     className={`tab-btn ${state.activeTab === "units" ? "active" : ""}`}
                     onClick={() =>
-                        setState((prev) => ({ ...prev, activeTab: "units" }))
+                        setState((prev) => ({ ...prev, activeTab: "units", error: null }))
                     }
                 >
-                    🏢 ניהול יחידות ({state.units.length})
+                    {state.activeTab === "units" && (
+                        <motion.span
+                            layoutId="admin-active-tab-pill"
+                            className="tab-active-indicator"
+                            transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                        />
+                    )}
+                    <span className="tab-label">🏢 ניהול יחידות ({state.units.length})</span>
                 </button>
             </div>
 
@@ -315,7 +361,6 @@ const AdminPage = () => {
                     onAddUnit={handleAddUnit}
                     onDeleteUnit={handleDeleteUnit}
                     loading={state.loading}
-                    error={state.error}
                 />
             )}
 
@@ -346,7 +391,7 @@ const AdminPage = () => {
                 currentManager={state.replacingManager}
                 onSubmit={handleReplaceManager}
             />
-        </div>
+        </motion.div>
     );
 };
 

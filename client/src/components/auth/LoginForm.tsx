@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Lock, User, ArrowLeft, Loader2 } from "lucide-react";
 
 interface LoginFormProps {
     onSubmit: (data: { employeeCode: string; password: string }) => void;
@@ -39,7 +41,12 @@ const LoginForm = ({
             {error && <div className="error-message">{error}</div>}
 
             <div className="form-group">
-                <label htmlFor="employeeCode">קוד עובד או אימייל</label>
+                <label htmlFor="employeeCode">
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        <User size={13} style={{ opacity: 0.7 }} />
+                        <span>קוד עובד או אימייל</span>
+                    </span>
+                </label>
                 <input
                     id="employeeCode"
                     name="employeeCode"
@@ -47,29 +54,51 @@ const LoginForm = ({
                     required
                     autoComplete="username"
                     dir="ltr"
-                    placeholder="123456"
+                    placeholder="לדוגמה: 123456"
                     value={formData.employeeCode}
                     onChange={handleChange}
                 />
             </div>
 
             <div className="form-group">
-                <label htmlFor="password">סיסמה</label>
+                <label htmlFor="password">
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        <Lock size={13} style={{ opacity: 0.7 }} />
+                        <span>סיסמה</span>
+                    </span>
+                </label>
                 <input
                     id="password"
                     name="password"
                     type="password"
                     required
                     autoComplete="current-password"
-                    placeholder="הזן סיסמה"
+                    placeholder="הזן את סיסמתך"
                     value={formData.password}
                     onChange={handleChange}
                 />
             </div>
 
-            <button type="submit" disabled={loading} className="btn-submit">
-                {loading ? "מתחבר..." : "התחבר למערכת"}
-            </button>
+            <motion.button
+                type="submit"
+                disabled={loading}
+                className="btn-submit"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                style={{ marginTop: "8px" }}
+            >
+                {loading ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>מתחבר למערכת...</span>
+                    </span>
+                ) : (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                        <span>כניסה למערכת</span>
+                        <ArrowLeft size={16} />
+                    </span>
+                )}
+            </motion.button>
         </form>
     );
 };

@@ -1,4 +1,16 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import {
+    User as UserIcon,
+    Phone,
+    Mail,
+    KeyRound,
+    Clock,
+    MapPin,
+    Shield,
+    Save,
+    CheckCircle2,
+} from "lucide-react";
 import { updateMe } from "../api/users";
 import { useAuthStore } from "../store/authStore";
 import { getRoleLabel } from "../utils/formatters";
@@ -92,11 +104,20 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="profile-page">
+        <motion.div
+            className="profile-page"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        >
             <div className="profile-card">
-                <div className="profile-avatar">
+                <motion.div
+                    className="profile-avatar"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                >
                     {user?.fullName?.[0]?.toUpperCase() ?? "?"}
-                </div>
+                </motion.div>
                 <h1 className="profile-card__name">{user?.fullName}</h1>
                 <div className="profile-meta-badges">
                     <span className="profile-card__role">
@@ -108,36 +129,42 @@ export default function ProfilePage() {
                         </span>
                     )}
                     {user?.role === "admin" && (
-                        <span className="profile-card__badge-admin">
-                            🌐 ניהול כלל המערכת
+                        <span className="profile-card__badge-admin" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            <Shield size={13} />
+                            <span>ניהול כלל המערכת</span>
                         </span>
                     )}
                     {user?.role === "manager" && user?.unitName && (
-                        <span className="profile-card__unit">
-                            📍 מנהל יחידת {user.unitName}
+                        <span className="profile-card__unit" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            <MapPin size={13} />
+                            <span>מנהל יחידת {user.unitName}</span>
                         </span>
                     )}
                     {user?.role === "employee" && (
                         <>
                             {user?.unitName && (
-                                <span className="profile-card__unit">
-                                    📍 יחידת {user.unitName}
+                                <span className="profile-card__unit" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                    <MapPin size={13} />
+                                    <span>יחידת {user.unitName}</span>
                                 </span>
                             )}
-                            <span className="profile-card__hours">
-                                ⏱️ מכסת שעות שבועית:{" "}
-                                {user?.maxWeeklyHours || 40} שעות
+                            <span className="profile-card__hours" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                <Clock size={13} />
+                                <span>מכסת שעות: {user?.maxWeeklyHours || 40} שעות/שבוע</span>
                             </span>
                         </>
                     )}
                 </div>
 
                 <form className="profile-form" onSubmit={handleSubmit}>
-                    <h2 className="profile-form__title">עריכת פרופיל</h2>
+                    <h2 className="profile-form__title">עריכת פרטים אישיים</h2>
 
                     <div className="profile-form__row">
                         <label className="profile-form__label">
-                            שם מלא
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                <UserIcon size={12} style={{ opacity: 0.6 }} />
+                                <span>שם מלא</span>
+                            </span>
                             <input
                                 className="profile-form__input"
                                 name="fullName"
@@ -148,25 +175,33 @@ export default function ProfilePage() {
                             />
                         </label>
                         <label className="profile-form__label">
-                            טלפון
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                <Phone size={12} style={{ opacity: 0.6 }} />
+                                <span>טלפון</span>
+                            </span>
                             <input
                                 className="profile-form__input"
                                 name="phone"
                                 value={form.phone ?? ""}
                                 onChange={handleChange}
                                 minLength={6}
+                                dir="ltr"
                             />
                         </label>
                     </div>
 
                     <label className="profile-form__label">
-                        כתובת דוא״ל
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                            <Mail size={12} style={{ opacity: 0.6 }} />
+                            <span>כתובת דוא״ל</span>
+                        </span>
                         <input
                             className="profile-form__input"
                             type="email"
                             name="email"
                             value={form.email ?? ""}
                             onChange={handleChange}
+                            dir="ltr"
                         />
                     </label>
 
@@ -176,7 +211,10 @@ export default function ProfilePage() {
 
                     <div className="profile-form__row">
                         <label className="profile-form__label">
-                            סיסמה חדשה
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                <KeyRound size={12} style={{ opacity: 0.6 }} />
+                                <span>סיסמה חדשה</span>
+                            </span>
                             <input
                                 className="profile-form__input"
                                 type="password"
@@ -188,7 +226,10 @@ export default function ProfilePage() {
                             />
                         </label>
                         <label className="profile-form__label">
-                            אימות סיסמה
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                <KeyRound size={12} style={{ opacity: 0.6 }} />
+                                <span>אימות סיסמה</span>
+                            </span>
                             <input
                                 className="profile-form__input"
                                 type="password"
@@ -202,20 +243,26 @@ export default function ProfilePage() {
 
                     {error && <p className="profile-form__error">{error}</p>}
                     {success && (
-                        <p className="profile-form__success">
-                            ✅ הפרופיל עודכן בהצלחה!
+                        <p className="profile-form__success" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <CheckCircle2 size={16} />
+                            <span>הפרופיל עודכן בהצלחה!</span>
                         </p>
                     )}
 
-                    <button
+                    <motion.button
                         type="submit"
                         className="profile-form__submit"
                         disabled={loading}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.98 }}
                     >
-                        {loading ? "שומר..." : "שמירת שינויים"}
-                    </button>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                            <Save size={15} />
+                            <span>{loading ? "שומר..." : "שמירת שינויים"}</span>
+                        </span>
+                    </motion.button>
                 </form>
             </div>
-        </div>
+        </motion.div>
     );
 }

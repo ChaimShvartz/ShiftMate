@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion, type Variants } from "framer-motion";
+import {
+    AlertCircle,
+    ArrowLeftRight,
+    CheckCircle2,
+    Calendar,
+    Radio,
+    History,
+    Sparkles,
+    Send,
+    X,
+    Clock,
+} from "lucide-react";
 import { getShifts } from "../api/shifts";
 import {
     approveApplicant,
@@ -28,11 +41,31 @@ function ShiftLine({ swap }: { swap: SwapRequest }) {
     if (!s) return <span className="muted">פרטי המשמרת אינם זמינים</span>;
     return (
         <span className="shift-line">
-            📅 {fmtDateShort(s.startTime)} · <b>{fmtTimeRange(s.startTime, s.endTime)}</b>
+            <Calendar size={13} style={{ opacity: 0.6 }} />
+            <span>{fmtDateShort(s.startTime)} · <b>{fmtTimeRange(s.startTime, s.endTime)}</b></span>
             {s.title ? ` · ${s.title}` : ""}
         </span>
     );
 }
+
+const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.07,
+        },
+    },
+};
+
+const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 14 },
+    show: {
+        opacity: 1,
+        y: 0,
+        transition: { type: "spring", stiffness: 300, damping: 25 },
+    },
+};
 
 export default function ManagerDashboardPage() {
     const user = useAuthStore((s) => s.user);
@@ -110,52 +143,100 @@ export default function ManagerDashboardPage() {
     }, [week]);
 
     return (
-        <div className="page page--wide">
-            <header className="page-head">
+        <motion.div
+            className="page page--wide"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+        >
+            <motion.header className="page-head" variants={itemVariants}>
                 <div>
-                    <h1 className="page__title">דאשבורד ניהול</h1>
+                    <h1 className="page__title">דאשבורד ניהול יחידה</h1>
                     <p className="page__subtitle">
                         יחידה: <strong>{user?.unitName}</strong>
                         {week?.weekNumber ? ` · שבוע ${week.weekNumber}` : ""}
                     </p>
                 </div>
-                <span className={`live-pill ${connected ? "is-live" : ""}`}>{connected ? "● מחובר בזמן אמת" : "○ מתחבר מחדש…"}</span>
-            </header>
+                <span className={`live-pill ${connected ? "is-live" : ""}`}>
+                    <Radio size={12} />
+                    <span>{connected ? "סנכרון פעיל בזמן אמת" : "מתחבר מחדש…"}</span>
+                </span>
+            </motion.header>
 
-            <section className="kpi-grid" aria-label="מדדים">
-                <div className={`kpi ${pending.length ? "kpi--alert" : ""}`}>
-                    <span className="kpi__label">ממתינות לאישור פרסום</span>
+            <motion.section className="kpi-grid" aria-label="מדדים" variants={itemVariants}>
+                <motion.div
+                    className={`kpi ${pending.length ? "kpi--alert" : ""}`}
+                    whileHover={{ scale: 1.015 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span className="kpi__label">ממתינות לאישור פרסום</span>
+                        <AlertCircle size={16} style={{ color: pending.length ? "var(--warning)" : "var(--text-3)" }} />
+                    </div>
                     <b className="kpi__value"><CountUp value={pending.length} /></b>
-                    <span className="kpi__hint">{pending.length ? "דורש טיפול" : "הכול מטופל"}</span>
-                </div>
-                <div className="kpi kpi--brand">
-                    <span className="kpi__label">פעילות בבורסה</span>
+                    <span className="kpi__hint">{pending.length ? "דורש טיפול מנהל" : "הכול מטופל"}</span>
+                </motion.div>
+
+                <motion.div
+                    className="kpi kpi--brand"
+                    whileHover={{ scale: 1.015 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span className="kpi__label">פעילות בבורסה</span>
+                        <ArrowLeftRight size={16} style={{ color: "#38bdf8" }} />
+                    </div>
                     <b className="kpi__value"><CountUp value={onBoard.length} /></b>
                     <span className="kpi__hint">{waitingApplicants} מועמדים ממתינים להחלטה</span>
-                </div>
-                <div className="kpi">
-                    <span className="kpi__label">החלפות שאושרו</span>
+                </motion.div>
+
+                <motion.div
+                    className="kpi"
+                    whileHover={{ scale: 1.015 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span className="kpi__label">החלפות שאושרו</span>
+                        <CheckCircle2 size={16} style={{ color: "var(--success)" }} />
+                    </div>
                     <b className="kpi__value"><CountUp value={approvedCount} /></b>
                     <span className="kpi__hint">ב-30 הימים האחרונים</span>
-                </div>
-                <div className="kpi">
-                    <span className="kpi__label">משמרות בשבוע</span>
+                </motion.div>
+
+                <motion.div
+                    className="kpi"
+                    whileHover={{ scale: 1.015 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span className="kpi__label">משמרות השבוע</span>
+                        <Calendar size={16} style={{ color: "var(--brand)" }} />
+                    </div>
                     <b className="kpi__value"><CountUp value={stats.total} /></b>
                     <span className="kpi__hint">{stats.today} היום · {stats.inSwap} בתהליך החלפה</span>
-                </div>
-            </section>
+                </motion.div>
+            </motion.section>
 
             <div className="dash-grid">
                 <div className="dash-main">
-                    <section className="panel">
+                    <motion.section className="panel" variants={itemVariants}>
                         <header className="panel__head">
-                            <h2>⏳ ממתינות לאישור פרסום</h2>
+                            <h2>
+                                <Clock size={17} style={{ color: "var(--warning)" }} />
+                                <span>ממתינות לאישור פרסום</span>
+                            </h2>
                             <span className="count">{pending.length}</span>
                         </header>
-                        {loading && <div className="loading-state">טוען...</div>}
-                        {!loading && pending.length === 0 && <p className="panel__empty">אין בקשות שממתינות לאישור 🎉</p>}
+                        {loading && <div className="loading-state">טוען נתונים...</div>}
+                        {!loading && pending.length === 0 && (
+                            <p className="panel__empty">אין בקשות שממתינות לאישור פרסום ✨</p>
+                        )}
                         {pending.map((swap) => (
-                            <article key={swap._id} className="request-row">
+                            <motion.article
+                                key={swap._id}
+                                className="request-row"
+                                layout
+                            >
                                 <div className="request-row__info">
                                     <div className="request-row__who">
                                         <span className="avatar">{(swap.requesterName ?? "?").slice(0, 1)}</span>
@@ -168,25 +249,50 @@ export default function ManagerDashboardPage() {
                                     {swap.reason && <p className="request-row__reason">“{swap.reason}”</p>}
                                 </div>
                                 <div className="request-row__actions">
-                                    <button className="mgr-btn mgr-btn--publish" disabled={busyId === swap._id} onClick={() => act(swap._id, () => publishSwap(swap._id), "הבקשה פורסמה בבורסה")}>
-                                        📢 פרסם לבורסה
-                                    </button>
-                                    <button className="mgr-btn mgr-btn--reject" disabled={busyId === swap._id} onClick={() => handleReject(swap)}>
-                                        ✗ דחה
-                                    </button>
+                                    <motion.button
+                                        className="mgr-btn mgr-btn--publish"
+                                        disabled={busyId === swap._id}
+                                        onClick={() => act(swap._id, () => publishSwap(swap._id), "הבקשה פורסמה בבורסה")}
+                                        whileTap={{ scale: 0.96 }}
+                                    >
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                            <Send size={13} />
+                                            <span>פרסם לבורסה</span>
+                                        </span>
+                                    </motion.button>
+                                    <motion.button
+                                        className="mgr-btn mgr-btn--reject"
+                                        disabled={busyId === swap._id}
+                                        onClick={() => handleReject(swap)}
+                                        whileTap={{ scale: 0.96 }}
+                                    >
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                            <X size={13} />
+                                            <span>דחה</span>
+                                        </span>
+                                    </motion.button>
                                 </div>
-                            </article>
+                            </motion.article>
                         ))}
-                    </section>
+                    </motion.section>
 
-                    <section className="panel">
+                    <motion.section className="panel" variants={itemVariants}>
                         <header className="panel__head">
-                            <h2>📋 בבורסה — מועמדים להחלטה</h2>
+                            <h2>
+                                <ArrowLeftRight size={17} style={{ color: "var(--brand)" }} />
+                                <span>בבורסה — מועמדים להחלטה</span>
+                            </h2>
                             <span className="count">{onBoard.length}</span>
                         </header>
-                        {!loading && onBoard.length === 0 && <p className="panel__empty">אין כרגע בקשות פתוחות בבורסה.</p>}
+                        {!loading && onBoard.length === 0 && (
+                            <p className="panel__empty">אין כרגע בקשות פתוחות בבורסה.</p>
+                        )}
                         {onBoard.map((swap) => (
-                            <article key={swap._id} className="request-row request-row--stack">
+                            <motion.article
+                                key={swap._id}
+                                className="request-row request-row--stack"
+                                layout
+                            >
                                 <div className="request-row__info">
                                     <div className="request-row__who">
                                         <span className="avatar">{(swap.requesterName ?? "?").slice(0, 1)}</span>
@@ -201,22 +307,40 @@ export default function ManagerDashboardPage() {
                                 <ApplicantsList
                                     applicants={swap.applicants}
                                     busy={busyId === swap._id}
-                                    onApprove={(code) => handleApprove(swap, code, swap.applicants.find((a) => a.employeeCode === code)?.employeeName)}
-                                    onReject={(code) => act(swap._id, () => rejectApplicant(swap._id, code), "המועמד נדחה", "warning")}
+                                    onApprove={(code) =>
+                                        handleApprove(
+                                            swap,
+                                            code,
+                                            swap.applicants.find((a) => a.employeeCode === code)?.employeeName,
+                                        )
+                                    }
+                                    onReject={(code) =>
+                                        act(
+                                            swap._id,
+                                            () => rejectApplicant(swap._id, code),
+                                            "המועמד נדחה",
+                                            "warning",
+                                        )
+                                    }
                                 />
-                            </article>
+                            </motion.article>
                         ))}
-                    </section>
+                    </motion.section>
                 </div>
 
                 <aside className="dash-side">
-                    <section className="panel">
+                    <motion.section className="panel" variants={itemVariants}>
                         <header className="panel__head">
-                            <h2>⚡ פעילות בזמן אמת</h2>
+                            <h2>
+                                <Sparkles size={16} style={{ color: "var(--brand)" }} />
+                                <span>פעילות שוטפת</span>
+                            </h2>
                         </header>
                         <ul className="feed">
-                            {items.length === 0 && <li className="panel__empty">הפעילות תופיע כאן ברגע שתתרחש.</li>}
-                            {items.slice(0, 12).map((n) => (
+                            {items.length === 0 && (
+                                <li className="panel__empty">פעילות בזמן אמת תופיע כאן.</li>
+                            )}
+                            {items.slice(0, 10).map((n) => (
                                 <li key={n.id} className={`feed__item feed__item--${n.level}`}>
                                     <span className="feed__dot" />
                                     <div>
@@ -226,16 +350,19 @@ export default function ManagerDashboardPage() {
                                 </li>
                             ))}
                         </ul>
-                    </section>
+                    </motion.section>
 
-                    <section className="panel">
+                    <motion.section className="panel" variants={itemVariants}>
                         <header className="panel__head">
-                            <h2>🕘 היסטוריה אחרונה</h2>
+                            <h2>
+                                <History size={16} style={{ opacity: 0.7 }} />
+                                <span>היסטוריה אחרונה</span>
+                            </h2>
                         </header>
                         <ul className="history">
                             {closed.length === 0 && <li className="panel__empty">אין עדיין היסטוריה.</li>}
                             {closed.map((s) => {
-                                const label = CLOSED_LABEL[s.status];
+                                const label = CLOSED_LABEL[s.status] || { text: s.status, tone: "muted" };
                                 return (
                                     <li key={s._id}>
                                         <div>
@@ -248,11 +375,16 @@ export default function ManagerDashboardPage() {
                                 );
                             })}
                         </ul>
-                    </section>
+                    </motion.section>
 
-                    <Link to="/schedule" className="btn-secondary btn-block">📅 מעבר ללוח המשמרות</Link>
+                    <Link to="/schedule" className="btn-secondary btn-block">
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                            <Calendar size={15} />
+                            <span>מעבר ללוח המשמרות המלא</span>
+                        </span>
+                    </Link>
                 </aside>
             </div>
-        </div>
+        </motion.div>
     );
 }

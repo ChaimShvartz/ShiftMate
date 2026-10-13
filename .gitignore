@@ -178,3 +178,8 @@ dist-ssr
 
 *md
 !README.md
+
+# AI Studio & Local Backups
+.aistudio/
+client/src_backup/
+client/src_redesign_backup/

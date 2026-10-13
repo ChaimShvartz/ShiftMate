@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Upload, Download, FileSpreadsheet, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { downloadTemplate, importShifts } from "../../api/shifts";
 import type { ShiftWeek } from "../../types";
 import { getErrorDetails, getErrorMessage } from "../../utils/getErrorMessage";
@@ -118,100 +120,131 @@ const ExcelImportModal = ({
     };
 
     return (
-        <div className="modal-backdrop" dir="rtl">
-            <div className="modal-content">
-                <header className="modal-header">
-                    <h3>העלאת לוח משמרות שבועי (Excel)</h3>
-                    <button
-                        type="button"
-                        className="btn-close"
-                        onClick={handleClose}
-                    >
-                        ✕
-                    </button>
-                </header>
+        <AnimatePresence>
+            <motion.div
+                className="modal-backdrop"
+                dir="rtl"
+                onClick={handleClose}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+            >
+                <motion.div
+                    className="modal-content"
+                    onClick={(e) => e.stopPropagation()}
+                    initial={{ opacity: 0, scale: 0.94, y: 12 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                >
+                    <header className="modal-header">
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <FileSpreadsheet size={20} style={{ color: "var(--brand)" }} />
+                            <h3>העלאת לוח משמרות שבועי (Excel)</h3>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn-close"
+                            onClick={handleClose}
+                        >
+                            <X size={16} />
+                        </button>
+                    </header>
 
-                <div className="rule-notice-box">
-                    <strong>📅 שים לב לכלל העסקי:</strong>
-                    <p>
-                        העלאת לוח משמרות שבועי מתאפשרת{" "}
-                        <strong>אך ורק בימי חמישי</strong> עבור השבוע הבא.
-                    </p>
-                </div>
-
-                {state.error && (
-                    <div className="error-message">{state.error}</div>
-                )}
-                {state.rowErrors.length > 0 && (
-                    <ul className="row-errors">
-                        {state.rowErrors.map((r, i) => (
-                            <li key={i}>
-                                {r.row ? <b>שורה {r.row}:</b> : null} {r.message}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-                {state.successMessage && (
-                    <div className="success-message">
-                        {state.successMessage}
-                    </div>
-                )}
-
-                <div className="template-download-section">
-                    <p>זקוק לתבנית הקובץ עם שמות העובדים של היחידה?</p>
-                    <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={handleDownloadTemplate}
-                        disabled={state.downloading}
-                    >
-                        {state.downloading
-                            ? "מוריד תבנית..."
-                            : "📥 הורד תבנית אקסל מוכנה"}
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="modal-form">
-                    <div className="form-group">
-                        <label htmlFor="excelFile">בחר קובץ אקסל (.xlsx)</label>
-                        <input
-                            id="excelFile"
-                            type="file"
-                            accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            onChange={handleFileChange}
-                            required
-                        />
+                    <div className="rule-notice-box">
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                            <AlertTriangle size={15} />
+                            <strong>שים לב לכלל העסקי:</strong>
+                        </div>
+                        <p>
+                            העלאת לוח משמרות שבועי מתאפשרת{" "}
+                            <strong>אך ורק בימי חמישי</strong> עבור השבוע הבא.
+                        </p>
                     </div>
 
-                    {state.file && (
-                        <div className="selected-file-info">
-                            <span>
-                                קובץ שנבחר: <strong>{state.file.name}</strong>
-                            </span>
+                    {state.error && (
+                        <div className="error-message">{state.error}</div>
+                    )}
+                    {state.rowErrors.length > 0 && (
+                        <ul className="row-errors">
+                            {state.rowErrors.map((r, i) => (
+                                <li key={i}>
+                                    {r.row ? <b>שורה {r.row}:</b> : null} {r.message}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    {state.successMessage && (
+                        <div className="success-message" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <CheckCircle2 size={16} />
+                            <span>{state.successMessage}</span>
                         </div>
                     )}
 
-                    <div className="modal-actions">
-                        <button
+                    <div className="template-download-section">
+                        <p>זקוק לתבנית הקובץ עם שמות העובדים של היחידה?</p>
+                        <motion.button
                             type="button"
-                            className="btn-cancel"
-                            onClick={handleClose}
+                            className="btn-secondary"
+                            onClick={handleDownloadTemplate}
+                            disabled={state.downloading}
+                            whileTap={{ scale: 0.97 }}
                         >
-                            ביטול
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={state.loading || !state.file}
-                            className="btn-submit"
-                        >
-                            {state.loading
-                                ? "מעלה ומאמת נתונים..."
-                                : "העלה לוח משמרות"}
-                        </button>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                <Download size={14} />
+                                <span>{state.downloading ? "מוריד תבנית..." : "הורד תבנית אקסל מוכנה"}</span>
+                            </span>
+                        </motion.button>
                     </div>
-                </form>
-            </div>
-        </div>
+
+                    <form onSubmit={handleSubmit} className="modal-form">
+                        <div className="form-group">
+                            <label htmlFor="excelFile">בחר קובץ אקסל (.xlsx)</label>
+                            <input
+                                id="excelFile"
+                                type="file"
+                                accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                onChange={handleFileChange}
+                                required
+                            />
+                        </div>
+
+                        {state.file && (
+                            <div className="selected-file-info">
+                                <span>
+                                    קובץ שנבחר: <strong>{state.file.name}</strong>
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="modal-actions">
+                            <button
+                                type="button"
+                                className="btn-cancel"
+                                onClick={handleClose}
+                            >
+                                ביטול
+                            </button>
+                            <motion.button
+                                type="submit"
+                                disabled={state.loading || !state.file}
+                                className="btn-submit"
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                    <Upload size={15} />
+                                    <span>
+                                        {state.loading
+                                            ? "מעלה ומאמת נתונים..."
+                                            : "העלה לוח משמרות"}
+                                    </span>
+                                </span>
+                            </motion.button>
+                        </div>
+                    </form>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
     );
 };
 
