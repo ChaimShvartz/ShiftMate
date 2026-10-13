@@ -1,3 +1,4 @@
+import type React from "react";
 import { Trash2 } from "lucide-react";
 import { useMemo } from "react";
 import { useUiStore } from "../../store/uiStore";
@@ -49,7 +50,7 @@ export default function WeekScheduleView({ week, employees, query, onEditShift, 
 
     return (
         <div className="roster">
-            <div className="roster__grid" style={{ gridTemplateColumns: `minmax(170px, 210px) repeat(${days.length}, minmax(120px, 1fr))` }}>
+            <div className="roster__grid" style={{ "--days": days.length } as React.CSSProperties}>
                 <div className="roster__corner">עובד</div>
                 {days.map((d) => (
                     <div key={d} className={`roster__day ${isToday(`${d}T00:00:00Z`) ? "is-today" : ""}`}>

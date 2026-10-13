@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { Shift } from "../../types";
 import { dayKey, fmtDayMonth, fmtTime, fmtWeekday, isToday, nowFloating } from "../../utils/datetime";
 
@@ -33,6 +33,15 @@ export default function TimeGrid({ shifts, startDate, onSelect }: Props) {
         return { days, from: Math.max(0, Math.floor(lo) - 1), to: Math.min(24, Math.ceil(hi) + 1) };
     }, [shifts, startDate]);
 
+    // On narrow screens the grid scrolls sideways: bring the first shift (or today) into view.
+    const scroller = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const el = scroller.current;
+        if (!el || el.scrollWidth <= el.clientWidth) return;
+        const target = el.querySelector<HTMLElement>(".tblock") ?? el.querySelector<HTMLElement>(".tgrid__head.is-today");
+        target?.scrollIntoView({ inline: "center", block: "nearest" });
+    }, [shifts, days]);
+
     const hours = Array.from({ length: to - from }, (_, i) => from + i);
     const nowF = nowFloating();
     const nowKey = nowF.toISOString().slice(0, 10);
@@ -40,8 +49,8 @@ export default function TimeGrid({ shifts, startDate, onSelect }: Props) {
 
     return (
         <div className="tgrid" role="grid" aria-label="לוח שבועי">
-            <div className="tgrid__scroll">
-                <div className="tgrid__inner" style={{ gridTemplateColumns: `52px repeat(7, minmax(112px, 1fr))` }}>
+            <div className="tgrid__scroll" ref={scroller}>
+                <div className="tgrid__inner">
                     <div className="tgrid__corner" />
                     {days.map((d) => (
                         <div key={d} className={`tgrid__head ${isToday(`${d}T00:00:00Z`) ? "is-today" : ""}`}>

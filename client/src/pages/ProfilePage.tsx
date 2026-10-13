@@ -1,3 +1,4 @@
+import ThemeToggle from "../components/ui/ThemeToggle";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -155,6 +156,8 @@ export default function ProfilePage() {
                         </>
                     )}
                 </div>
+
+                <div className="profile-theme"><span>מראה המערכת</span><ThemeToggle /></div>
 
                 <form className="profile-form" onSubmit={handleSubmit}>
                     <h2 className="profile-form__title">עריכת פרטים אישיים</h2>
