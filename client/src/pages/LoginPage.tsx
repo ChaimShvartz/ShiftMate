@@ -3,9 +3,9 @@ import { Bell, CalendarDays, Repeat } from "lucide-react";
 import Logo, { LogoMark } from "../components/brand/Logo";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { getSetupStatus } from "../api/setup";
 import LoginForm from "../components/auth/LoginForm";
+import LoginScene from "../components/auth/LoginScene";
 import { useAuthStore } from "../store/authStore";
 import { getErrorMessage } from "../utils/getErrorMessage";
 
@@ -79,14 +79,6 @@ const LoginPage = () => {
         }
     };
 
-    const DEMO = [
-        { day: "ראשון", shifts: [["06:00", "דנה", "a"], ["14:00", "אורי", "b"]] },
-        { day: "שני", shifts: [["06:00", "אורי", "b"], ["22:00", "מיכל", "c"]] },
-        { day: "שלישי", shifts: [["14:00", "דנה", "a"], ["14:00", "נועם", "swap"]] },
-        { day: "רביעי", shifts: [["06:00", "מיכל", "c"], ["22:00", "אורי", "b"]] },
-        { day: "חמישי", shifts: [["06:00", "נועם", "d"], ["14:00", "דנה", "a"]] },
-    ] as const;
-
     return (
         <main className="login-page" dir="rtl">
             <section className="login-board" aria-hidden>
@@ -96,27 +88,13 @@ const LoginPage = () => {
                     <p>המנהל מפרסם לוח, העובדים מבקשים להחליף, וכולם רואים מה השתנה ברגע שזה קורה.</p>
                 </div>
 
-                <div className="login-board__bottom">
-                    <motion.div className="demo-week" initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.05, delayChildren: 0.3 } } }}>
-                        <span className="demo-week__tag">דוגמה להמחשה</span>
-                        {DEMO.map((d) => (
-                            <div key={d.day} className="demo-week__day">
-                                <small>{d.day}</small>
-                                {d.shifts.map(([time, who, tone]) => (
-                                    <motion.span key={time} className={`demo-shift demo-shift--${tone}`} variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 26 } } }}>
-                                        <b>{time}</b>{who}
-                                    </motion.span>
-                                ))}
-                            </div>
-                        ))}
-                    </motion.div>
+                <LoginScene />
 
-                    <ul className="login-board__points">
-                        <li><CalendarDays size={18} />לוח שבועי ברור לכל עובד</li>
-                        <li><Repeat size={18} />בורסת החלפות שמתעדכנת בזמן אמת</li>
-                        <li><Bell size={18} />התראות מיידיות על כל שינוי</li>
-                    </ul>
-                </div>
+                <ul className="login-board__points">
+                    <li><CalendarDays size={18} />לוח שבועי ברור לכל עובד</li>
+                    <li><Repeat size={18} />בורסת החלפות שמתעדכנת בזמן אמת</li>
+                    <li><Bell size={18} />התראות מיידיות על כל שינוי</li>
+                </ul>
             </section>
 
             <section className="login-form-side">
