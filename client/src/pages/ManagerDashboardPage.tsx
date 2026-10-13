@@ -1,82 +1,44 @@
+import { Check, Inbox, Send, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { motion, type Variants } from "framer-motion";
-import {
-    AlertCircle,
-    ArrowLeftRight,
-    CheckCircle2,
-    Calendar,
-    Radio,
-    History,
-    Sparkles,
-    Send,
-    X,
-    Clock,
-} from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { getShifts } from "../api/shifts";
-import {
-    approveApplicant,
-    getManagerSwaps,
-    publishSwap,
-    rejectApplicant,
-    rejectSwap,
-} from "../api/swaps";
-import CountUp from "../components/ui/CountUp";
+import { approveApplicant, getManagerSwaps, publishSwap, rejectApplicant, rejectSwap } from "../api/swaps";
 import ApplicantsList from "../components/swaps/ApplicantsList";
-import { useAuthStore } from "../store/authStore";
+import Avatar, { AvatarStack } from "../components/ui/Avatar";
+import SearchInput from "../components/ui/SearchInput";
+import Sheet from "../components/ui/Sheet";
 import { useNotificationStore } from "../store/notificationStore";
 import { useUiStore } from "../store/uiStore";
 import type { ShiftWeek, SwapRequest } from "../types";
-import { dayKey, fmtDateShort, fmtTimeRange, nowFloating, timeAgo } from "../utils/datetime";
+import { fmtDateLong, fmtDayMonth, fmtTimeRange, fmtWeekday, timeAgo } from "../utils/datetime";
+import { personClass } from "../utils/person";
 import { getErrorMessage } from "../utils/getErrorMessage";
+import { matches } from "../utils/search";
 
-const CLOSED_LABEL: Record<string, { text: string; tone: string }> = {
-    closed_approved: { text: "אושר", tone: "success" },
-    closed_rejected: { text: "נדחה", tone: "danger" },
-    closed_employee_removed: { text: "בוטל", tone: "muted" },
+const CLOSED: Record<string, { text: string; plate: string }> = {
+    closed_approved: { text: "אושרה", plate: "plate--ok" },
+    closed_rejected: { text: "נדחתה", plate: "plate--bad" },
+    closed_employee_removed: { text: "בוטלה", plate: "plate--idle" },
 };
 
-function ShiftLine({ swap }: { swap: SwapRequest }) {
-    const s = swap.shiftDetails;
-    if (!s) return <span className="muted">פרטי המשמרת אינם זמינים</span>;
-    return (
-        <span className="shift-line">
-            <Calendar size={13} style={{ opacity: 0.6 }} />
-            <span>{fmtDateShort(s.startTime)} · <b>{fmtTimeRange(s.startTime, s.endTime)}</b></span>
-            {s.title ? ` · ${s.title}` : ""}
-        </span>
-    );
+function statusPlate(s: SwapRequest) {
+    if (s.status === "pending_manager_publish") return { text: "ממתינה לפרסום", plate: "plate--warn" };
+    if (s.status === "published_to_board") return { text: `בבורסה · ${s.applicantsCount}`, plate: "plate--info" };
+    return CLOSED[s.status] ?? { text: s.status, plate: "plate--idle" };
 }
 
-const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.07,
-        },
-    },
-};
-
-const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 14 },
-    show: {
-        opacity: 1,
-        y: 0,
-        transition: { type: "spring", stiffness: 300, damping: 25 },
-    },
-};
-
 export default function ManagerDashboardPage() {
-    const user = useAuthStore((s) => s.user);
     const addToast = useUiStore((s) => s.addToast);
     const confirm = useUiStore((s) => s.confirm);
     const { swapsVersion, shiftsVersion, items, connected } = useNotificationStore();
+    const [params, setParams] = useSearchParams();
 
     const [swaps, setSwaps] = useState<SwapRequest[]>([]);
     const [week, setWeek] = useState<ShiftWeek | null>(null);
     const [loading, setLoading] = useState(true);
-    const [busyId, setBusyId] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+    const [q, setQ] = useState(params.get("q") ?? "");
+    const selectedId = params.get("swap");
 
     const load = useCallback(async () => {
         try {
@@ -84,7 +46,7 @@ export default function ManagerDashboardPage() {
             setSwaps(s);
             setWeek(w);
         } catch (err) {
-            addToast(getErrorMessage(err, "שגיאה בטעינת הדאשבורד"), "error");
+            addToast(getErrorMessage(err, "שגיאה בטעינת הבקשות"), "error");
         } finally {
             setLoading(false);
         }
@@ -94,8 +56,28 @@ export default function ManagerDashboardPage() {
         void load();
     }, [load, swapsVersion, shiftsVersion]);
 
-    async function act(id: string, fn: () => Promise<void>, ok: string, tone: "success" | "warning" = "success") {
-        setBusyId(id);
+    const visible = useMemo(
+        () =>
+            swaps.filter((s) =>
+                matches(q, s.requesterName, s.reason, s.shiftDetails?.title, s.applicants.map((a) => a.employeeName).join(" ")),
+            ),
+        [swaps, q],
+    );
+    const pending = visible.filter((s) => s.status === "pending_manager_publish");
+    const board = visible.filter((s) => s.status === "published_to_board");
+    const closed = visible.filter((s) => s.status.startsWith("closed")).slice(0, 10);
+    const waiting = swaps.filter((s) => s.status === "published_to_board").reduce((n, s) => n + s.applicants.filter((a) => a.status === "pending").length, 0);
+    const selected = swaps.find((s) => s._id === selectedId) ?? null;
+
+    const select = (id: string | null) => {
+        const next = new URLSearchParams(params);
+        if (id) next.set("swap", id);
+        else next.delete("swap");
+        setParams(next, { replace: true });
+    };
+
+    async function act(fn: () => Promise<void>, ok: string, tone: "success" | "warning" = "success") {
+        setBusy(true);
         try {
             await fn();
             addToast(ok, tone);
@@ -103,288 +85,134 @@ export default function ManagerDashboardPage() {
         } catch (err) {
             addToast(getErrorMessage(err, "הפעולה נכשלה"), "error");
         } finally {
-            setBusyId(null);
+            setBusy(false);
         }
     }
 
-    async function handleReject(swap: SwapRequest) {
-        const okay = await confirm({
-            title: "דחיית בקשה",
-            message: `לדחות את בקשת ההחלפה של ${swap.requesterName}? העובד יקבל על כך התראה.`,
-            confirmLabel: "דחה בקשה",
-            danger: true,
-        });
-        if (okay) await act(swap._id, () => rejectSwap(swap._id), "הבקשה נדחתה", "warning");
+    async function onReject(swap: SwapRequest) {
+        const ok = await confirm({ title: "דחיית הבקשה", message: `בקשת ההחלפה של ${swap.requesterName} תיסגר והעובד יקבל על כך התראה.`, confirmLabel: "דחה בקשה", danger: true });
+        if (ok) await act(() => rejectSwap(swap._id), "הבקשה נדחתה", "warning");
     }
 
-    async function handleApprove(swap: SwapRequest, code: string, name?: string) {
-        const okay = await confirm({
-            title: "אישור מחליף",
-            message: `לאשר את ${name ?? code} כמחליף/ה של ${swap.requesterName}? שאר המועמדים יידחו אוטומטית.`,
-            confirmLabel: "אשר החלפה",
-        });
-        if (okay) await act(swap._id, () => approveApplicant(swap._id, code), "ההחלפה אושרה ועודכנה בלוח");
+    async function onApprove(swap: SwapRequest, code: string, name?: string) {
+        const ok = await confirm({ title: "אישור מחליף", message: `${name ?? code} יחליף את ${swap.requesterName} במשמרת, ושאר המועמדים יידחו אוטומטית.`, confirmLabel: "אשר החלפה" });
+        if (ok) await act(() => approveApplicant(swap._id, code), "ההחלפה אושרה ועודכנה בלוח");
     }
 
-    const pending = swaps.filter((s) => s.status === "pending_manager_publish");
-    const onBoard = swaps.filter((s) => s.status === "published_to_board");
-    const closed = swaps.filter((s) => s.status.startsWith("closed")).slice(0, 8);
-    const waitingApplicants = onBoard.reduce((n, s) => n + s.applicants.filter((a) => a.status === "pending").length, 0);
-    const approvedCount = swaps.filter((s) => s.status === "closed_approved").length;
+    const renderCard = (s: SwapRequest) => {
+        const p = statusPlate(s);
+        const sh = s.shiftDetails;
+        const apps = s.applicants.filter((x) => x.status === "pending").map((x) => ({ name: x.employeeName, code: x.employeeCode }));
+        return (
+            <button key={s._id} type="button" className={`kcard ${personClass(s.requesterEmployeeCode)} ${s.status.startsWith("closed") ? "kcard--done" : ""}`} onClick={() => select(s._id)}>
+                <span className="kcard__top">
+                    <Avatar name={s.requesterName} code={s.requesterEmployeeCode} />
+                    <span><strong>{s.requesterName}</strong><small>{timeAgo(s.createdAt)}</small></span>
+                </span>
+                <span className="kcard__time">{sh ? fmtTimeRange(sh.startTime, sh.endTime) : "—"}</span>
+                {sh && <span className="kcard__date">{fmtWeekday(sh.startTime)} {fmtDayMonth(sh.startTime)}{sh.title ? ` · ${sh.title}` : ""}</span>}
+                {s.reason && <span className="kcard__reason">{s.reason}</span>}
+                <span className="kcard__foot">
+                    <span className={`plate ${p.plate}`}>{p.text}</span>
+                    {s.status === "published_to_board" && <AvatarStack people={apps} />}
+                </span>
+            </button>
+        );
+    };
 
-    const stats = useMemo(() => {
-        const shifts = week?.shifts ?? [];
-        const today = nowFloating().toISOString().slice(0, 10);
-        return {
-            total: shifts.length,
-            today: shifts.filter((s) => dayKey(s.startTime) === today).length,
-            inSwap: shifts.filter((s) => s.status === "swap_pending").length,
-        };
-    }, [week]);
+    const renderColumn = (title: string, tone: string, list: SwapRequest[], empty: string) => (
+        <section key={tone} className={`kcol kcol--${tone}`}>
+            <header className="kcol__head"><i className="kcol__dot" />{title}<span className="kcol__count">{list.length}</span></header>
+            {list.length === 0 ? <p className="kcol__empty">{empty}</p> : list.map(renderCard)}
+        </section>
+    );
+
+    const sh = selected?.shiftDetails;
 
     return (
-        <motion.div
-            className="page page--wide"
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-        >
-            <motion.header className="page-head" variants={itemVariants}>
+        <div className="page">
+            <header className="page-head">
                 <div>
-                    <h1 className="page__title">דאשבורד ניהול יחידה</h1>
+                    <h1 className="page__title">בקשות החלפה</h1>
                     <p className="page__subtitle">
-                        יחידה: <strong>{user?.unitName}</strong>
-                        {week?.weekNumber ? ` · שבוע ${week.weekNumber}` : ""}
+                        {loading ? "טוען…" : <>יש <b>{swaps.filter((s) => s.status === "pending_manager_publish").length}</b> בקשות שממתינות לפרסום ו-<b>{waiting}</b> מועמדים שמחכים להחלטה{week?.weekNumber ? ` · שבוע ${week.weekNumber}` : ""}</>}
                     </p>
                 </div>
-                <span className={`live-pill ${connected ? "is-live" : ""}`}>
-                    <Radio size={12} />
-                    <span>{connected ? "סנכרון פעיל בזמן אמת" : "מתחבר מחדש…"}</span>
-                </span>
-            </motion.header>
-
-            <motion.section className="kpi-grid" aria-label="מדדים" variants={itemVariants}>
-                <motion.div
-                    className={`kpi ${pending.length ? "kpi--alert" : ""}`}
-                    whileHover={{ scale: 1.015 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span className="kpi__label">ממתינות לאישור פרסום</span>
-                        <AlertCircle size={16} style={{ color: pending.length ? "var(--warning)" : "var(--text-3)" }} />
-                    </div>
-                    <b className="kpi__value"><CountUp value={pending.length} /></b>
-                    <span className="kpi__hint">{pending.length ? "דורש טיפול מנהל" : "הכול מטופל"}</span>
-                </motion.div>
-
-                <motion.div
-                    className="kpi kpi--brand"
-                    whileHover={{ scale: 1.015 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span className="kpi__label">פעילות בבורסה</span>
-                        <ArrowLeftRight size={16} style={{ color: "#38bdf8" }} />
-                    </div>
-                    <b className="kpi__value"><CountUp value={onBoard.length} /></b>
-                    <span className="kpi__hint">{waitingApplicants} מועמדים ממתינים להחלטה</span>
-                </motion.div>
-
-                <motion.div
-                    className="kpi"
-                    whileHover={{ scale: 1.015 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span className="kpi__label">החלפות שאושרו</span>
-                        <CheckCircle2 size={16} style={{ color: "var(--success)" }} />
-                    </div>
-                    <b className="kpi__value"><CountUp value={approvedCount} /></b>
-                    <span className="kpi__hint">ב-30 הימים האחרונים</span>
-                </motion.div>
-
-                <motion.div
-                    className="kpi"
-                    whileHover={{ scale: 1.015 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span className="kpi__label">משמרות השבוע</span>
-                        <Calendar size={16} style={{ color: "var(--brand)" }} />
-                    </div>
-                    <b className="kpi__value"><CountUp value={stats.total} /></b>
-                    <span className="kpi__hint">{stats.today} היום · {stats.inSwap} בתהליך החלפה</span>
-                </motion.div>
-            </motion.section>
-
-            <div className="dash-grid">
-                <div className="dash-main">
-                    <motion.section className="panel" variants={itemVariants}>
-                        <header className="panel__head">
-                            <h2>
-                                <Clock size={17} style={{ color: "var(--warning)" }} />
-                                <span>ממתינות לאישור פרסום</span>
-                            </h2>
-                            <span className="count">{pending.length}</span>
-                        </header>
-                        {loading && <div className="loading-state">טוען נתונים...</div>}
-                        {!loading && pending.length === 0 && (
-                            <p className="panel__empty">אין בקשות שממתינות לאישור פרסום ✨</p>
-                        )}
-                        {pending.map((swap) => (
-                            <motion.article
-                                key={swap._id}
-                                className="request-row"
-                                layout
-                            >
-                                <div className="request-row__info">
-                                    <div className="request-row__who">
-                                        <span className="avatar">{(swap.requesterName ?? "?").slice(0, 1)}</span>
-                                        <div>
-                                            <strong>{swap.requesterName}</strong>
-                                            <small>{timeAgo(swap.createdAt)}</small>
-                                        </div>
-                                    </div>
-                                    <ShiftLine swap={swap} />
-                                    {swap.reason && <p className="request-row__reason">“{swap.reason}”</p>}
-                                </div>
-                                <div className="request-row__actions">
-                                    <motion.button
-                                        className="mgr-btn mgr-btn--publish"
-                                        disabled={busyId === swap._id}
-                                        onClick={() => act(swap._id, () => publishSwap(swap._id), "הבקשה פורסמה בבורסה")}
-                                        whileTap={{ scale: 0.96 }}
-                                    >
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                                            <Send size={13} />
-                                            <span>פרסם לבורסה</span>
-                                        </span>
-                                    </motion.button>
-                                    <motion.button
-                                        className="mgr-btn mgr-btn--reject"
-                                        disabled={busyId === swap._id}
-                                        onClick={() => handleReject(swap)}
-                                        whileTap={{ scale: 0.96 }}
-                                    >
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
-                                            <X size={13} />
-                                            <span>דחה</span>
-                                        </span>
-                                    </motion.button>
-                                </div>
-                            </motion.article>
-                        ))}
-                    </motion.section>
-
-                    <motion.section className="panel" variants={itemVariants}>
-                        <header className="panel__head">
-                            <h2>
-                                <ArrowLeftRight size={17} style={{ color: "var(--brand)" }} />
-                                <span>בבורסה — מועמדים להחלטה</span>
-                            </h2>
-                            <span className="count">{onBoard.length}</span>
-                        </header>
-                        {!loading && onBoard.length === 0 && (
-                            <p className="panel__empty">אין כרגע בקשות פתוחות בבורסה.</p>
-                        )}
-                        {onBoard.map((swap) => (
-                            <motion.article
-                                key={swap._id}
-                                className="request-row request-row--stack"
-                                layout
-                            >
-                                <div className="request-row__info">
-                                    <div className="request-row__who">
-                                        <span className="avatar">{(swap.requesterName ?? "?").slice(0, 1)}</span>
-                                        <div>
-                                            <strong>{swap.requesterName}</strong>
-                                            <small>{timeAgo(swap.createdAt)}</small>
-                                        </div>
-                                    </div>
-                                    <ShiftLine swap={swap} />
-                                    {swap.reason && <p className="request-row__reason">“{swap.reason}”</p>}
-                                </div>
-                                <ApplicantsList
-                                    applicants={swap.applicants}
-                                    busy={busyId === swap._id}
-                                    onApprove={(code) =>
-                                        handleApprove(
-                                            swap,
-                                            code,
-                                            swap.applicants.find((a) => a.employeeCode === code)?.employeeName,
-                                        )
-                                    }
-                                    onReject={(code) =>
-                                        act(
-                                            swap._id,
-                                            () => rejectApplicant(swap._id, code),
-                                            "המועמד נדחה",
-                                            "warning",
-                                        )
-                                    }
-                                />
-                            </motion.article>
-                        ))}
-                    </motion.section>
+                <div className="page-actions">
+                    <SearchInput label="חיפוש בבקשות" placeholder="חיפוש לפי עובד, סיבה או משמרת" value={q} onChange={setQ} />
+                    <span className={`live ${connected ? "is-on" : ""}`}><i />{connected ? "בזמן אמת" : "מתחבר…"}</span>
                 </div>
+            </header>
 
-                <aside className="dash-side">
-                    <motion.section className="panel" variants={itemVariants}>
-                        <header className="panel__head">
-                            <h2>
-                                <Sparkles size={16} style={{ color: "var(--brand)" }} />
-                                <span>פעילות שוטפת</span>
-                            </h2>
-                        </header>
-                        <ul className="feed">
-                            {items.length === 0 && (
-                                <li className="panel__empty">פעילות בזמן אמת תופיע כאן.</li>
-                            )}
-                            {items.slice(0, 10).map((n) => (
-                                <li key={n.id} className={`feed__item feed__item--${n.level}`}>
-                                    <span className="feed__dot" />
-                                    <div>
-                                        <p>{n.message}</p>
-                                        <time>{timeAgo(n.createdAt)}</time>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    </motion.section>
+            {!loading && swaps.length === 0 ? (
+                <div className="detail__empty">
+                    <Inbox size={40} strokeWidth={1.25} />
+                    <strong>אין עדיין בקשות החלפה</strong>
+                    <span>כשעובד יבקש להחליף משמרת, הבקשה תופיע כאן ותקבל על כך התראה.</span>
+                </div>
+            ) : (
+                <div className="kanban">
+                    {renderColumn("ממתינות לפרסום", "pending", pending, "הכול טופל. אין בקשות שמחכות לך.")}
+                    {renderColumn("בבורסה", "board", board, "אין כרגע משמרות פתוחות בבורסה.")}
+                    {renderColumn("הושלמו לאחרונה", "done", closed, "עדיין אין היסטוריה.")}
+                </div>
+            )}
 
-                    <motion.section className="panel" variants={itemVariants}>
-                        <header className="panel__head">
-                            <h2>
-                                <History size={16} style={{ opacity: 0.7 }} />
-                                <span>היסטוריה אחרונה</span>
-                            </h2>
-                        </header>
-                        <ul className="history">
-                            {closed.length === 0 && <li className="panel__empty">אין עדיין היסטוריה.</li>}
-                            {closed.map((s) => {
-                                const label = CLOSED_LABEL[s.status] || { text: s.status, tone: "muted" };
-                                return (
-                                    <li key={s._id}>
-                                        <div>
-                                            <strong>{s.requesterName}</strong>
-                                            {s.replacementName && <span> ← {s.replacementName}</span>}
-                                            <small>{timeAgo(s.createdAt)}</small>
-                                        </div>
-                                        <span className={`chip chip--${label.tone}`}>{label.text}</span>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </motion.section>
+            <Sheet open={Boolean(selected)} onOpenChange={(o) => !o && select(null)} title="פרטי הבקשה">
+                {selected && (
+                    <div className="detail">
+                        <div className="detail__head">
+                            <div className="detail__who">
+                                <Avatar name={selected.requesterName} code={selected.requesterEmployeeCode} size="lg" />
+                                <div><strong>{selected.requesterName}</strong><small>ביקש/ה להחליף · {timeAgo(selected.createdAt)}</small></div>
+                            </div>
+                            <span className={`plate ${statusPlate(selected).plate}`}>{statusPlate(selected).text}</span>
+                        </div>
 
-                    <Link to="/schedule" className="btn-secondary btn-block">
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                            <Calendar size={15} />
-                            <span>מעבר ללוח המשמרות המלא</span>
-                        </span>
-                    </Link>
-                </aside>
-            </div>
-        </motion.div>
+                        {sh ? (
+                            <div className="routesign">
+                                <span className="routesign__time">{fmtTimeRange(sh.startTime, sh.endTime)}</span>
+                                <span className="routesign__meta"><b>{fmtDateLong(sh.startTime)}</b>{sh.title || "משמרת"}</span>
+                            </div>
+                        ) : <p className="muted">פרטי המשמרת אינם זמינים.</p>}
+
+                        {selected.reason && <p className="detail__reason"><small>הסיבה שנמסרה</small>{selected.reason}</p>}
+
+                        {selected.status === "pending_manager_publish" && (
+                            <div className="detail__actions">
+                                <button type="button" className="btn btn--primary" disabled={busy} onClick={() => act(() => publishSwap(selected._id), "הבקשה פורסמה בבורסה")}><Send size={16} />פרסם לבורסה</button>
+                                <button type="button" className="btn btn--danger" disabled={busy} onClick={() => onReject(selected)}><X size={16} />דחה בקשה</button>
+                            </div>
+                        )}
+
+                        {selected.status === "published_to_board" && (
+                            <div className="detail__section">
+                                <h3>מועמדים להחלפה</h3>
+                                <ApplicantsList
+                                    applicants={selected.applicants}
+                                    busy={busy}
+                                    onApprove={(code) => onApprove(selected, code, selected.applicants.find((a) => a.employeeCode === code)?.employeeName)}
+                                    onReject={(code) => act(() => rejectApplicant(selected._id, code), "המועמד נדחה", "warning")}
+                                />
+                            </div>
+                        )}
+
+                        {selected.status.startsWith("closed") && (
+                            <p className="detail__reason"><small>תוצאה</small>{selected.status === "closed_approved" ? <><Check size={14} style={{ verticalAlign: -2 }} /> המשמרת עברה ל{selected.replacementName}.</> : selected.status === "closed_rejected" ? "הבקשה נדחתה ולא פורסמה." : "הבקשה בוטלה כי המשמרת עודכנה על ידי המנהל."}</p>
+                        )}
+                    </div>
+                )}
+            </Sheet>
+            {items.length > 0 && (
+                <section className="card" style={{ marginTop: 22, padding: "16px 20px" }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--ink-3)", marginBottom: 6 }}>פעילות אחרונה</h3>
+                    <ul className="feed">
+                        {items.slice(0, 4).map((n) => (
+                            <li key={n.id} className={`feed__item feed__item--${n.level}`}><span className="feed__dot" /><div><p>{n.message}</p><time>{timeAgo(n.createdAt)}</time></div></li>
+                        ))}
+                    </ul>
+                </section>
+            )}
+        </div>
     );
 }

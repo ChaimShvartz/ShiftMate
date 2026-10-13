@@ -1,42 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
-import { motion, type Variants } from "framer-motion";
-import {
-    Calendar,
-    Clock,
-    Hourglass,
-    ArrowLeftRight,
-    Sparkles,
-} from "lucide-react";
+import { Repeat } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getShifts } from "../api/shifts";
 import { createSwap, getMySwaps } from "../api/swaps";
-import ShiftCard from "../components/employee/ShiftCard";
+import TimeGrid from "../components/calendar/TimeGrid";
 import SwapRequestModal from "../components/employee/SwapRequestModal";
-import CountUp from "../components/ui/CountUp";
+import Modal from "../components/ui/Modal";
 import { useAuthStore } from "../store/authStore";
 import { useNotificationStore } from "../store/notificationStore";
 import { useUiStore } from "../store/uiStore";
 import type { Shift, ShiftWeek, SwapRequest } from "../types";
-import { dayKey, durationHours, fmtDateLong, fmtTimeRange, nowFloating } from "../utils/datetime";
+import { durationHours, fmtDateLong, fmtDayMonth, fmtTime, fmtTimeRange, fmtWeekday, nowFloating } from "../utils/datetime";
 import { getErrorMessage } from "../utils/getErrorMessage";
 
-const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.08,
-        },
-    },
-};
-
-const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 16 },
-    show: {
-        opacity: 1,
-        y: 0,
-        transition: { type: "spring", stiffness: 300, damping: 25 },
-    },
-};
+const OPEN = ["pending_manager_publish", "published_to_board"];
 
 export default function MyShiftsPage() {
     const user = useAuthStore((s) => s.user);
@@ -47,22 +23,20 @@ export default function MyShiftsPage() {
     const [weekDoc, setWeekDoc] = useState<ShiftWeek | null>(null);
     const [swaps, setSwaps] = useState<SwapRequest[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selected, setSelected] = useState<Shift | null>(null);
+    const [detail, setDetail] = useState<Shift | null>(null);
+    const [asking, setAsking] = useState<Shift | null>(null);
 
-    const load = useCallback(
-        async (weekNumber?: number) => {
-            try {
-                const [week, mine] = await Promise.all([getShifts(weekNumber), getMySwaps()]);
-                setWeekDoc(week);
-                setSwaps(mine);
-            } catch (err) {
-                addToast(getErrorMessage(err, "שגיאה בטעינת המשמרות"), "error");
-            } finally {
-                setLoading(false);
-            }
-        },
-        [addToast],
-    );
+    const load = useCallback(async (weekNumber?: number) => {
+        try {
+            const [week, mine] = await Promise.all([getShifts(weekNumber), getMySwaps()]);
+            setWeekDoc(week);
+            setSwaps(mine);
+        } catch (err) {
+            addToast(getErrorMessage(err, "שגיאה בטעינת המשמרות"), "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [addToast]);
 
     useEffect(() => {
         void load(weekDoc?.weekNumber ?? undefined);
@@ -71,151 +45,64 @@ export default function MyShiftsPage() {
 
     async function handleSwapConfirm(shiftId: number, reason: string) {
         await createSwap(shiftId, reason, weekDoc?.weekNumber);
-        addToast("בקשת ההחלפה נשלחה למנהל לאישור", "success");
+        addToast("הבקשה נשלחה למנהל. תקבל התראה כשתטופל.", "success");
         await load(weekDoc?.weekNumber);
     }
 
     const now = nowFloating().getTime();
-    const myShifts = (weekDoc?.shifts ?? [])
-        .filter((s) => s.assignedEmployeeCode === user?.employeeCode)
-        .sort((a, b) => a.startTime.localeCompare(b.startTime));
-    const next = myShifts.find((s) => new Date(s.endTime).getTime() > now);
-    const totalHours = myShifts.reduce((sum, s) => sum + durationHours(s.startTime, s.endTime), 0);
-    const openSwaps = swaps.filter(
-        (s) => s.requesterEmployeeCode === user?.employeeCode && ["pending_manager_publish", "published_to_board"].includes(s.status),
-    ).length;
-    const swapOfShift = (shift: Shift) =>
-        swaps.find(
-            (s) =>
-                s.shiftId === shift.id &&
-                s.weekNumber === weekDoc?.weekNumber &&
-                ["pending_manager_publish", "published_to_board"].includes(s.status),
-        );
-
-    const grouped = new Map<string, Shift[]>();
-    myShifts.forEach((s) => grouped.set(dayKey(s.startTime), [...(grouped.get(dayKey(s.startTime)) ?? []), s]));
+    const mine = useMemo(() => (weekDoc?.shifts ?? []).filter((s) => s.assignedEmployeeCode === user?.employeeCode).sort((a, b) => a.startTime.localeCompare(b.startTime)), [weekDoc, user]);
+    const limit = user?.maxWeeklyHours ?? 40;
+    const hours = mine.reduce((n, s) => n + durationHours(s.startTime, s.endTime), 0);
+    const next = mine.find((s) => new Date(s.endTime).getTime() > now);
+    const swapOf = (s: Shift) => swaps.find((w) => w.shiftId === s.id && w.weekNumber === weekDoc?.weekNumber && OPEN.includes(w.status));
+    const segs = Math.max(8, Math.ceil(limit / 4));
+    const filled = Math.min(segs, Math.round((hours / limit) * segs));
+    const detailSwap = detail ? swapOf(detail) : undefined;
+    const detailPast = detail ? new Date(detail.endTime).getTime() <= now : false;
 
     return (
-        <motion.div
-            className="page"
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-        >
-            <motion.header className="page-head" variants={itemVariants}>
+        <div className="page">
+            <header className="page-head">
                 <div>
-                    <h1 className="page__title">
-                        שלום, {user?.fullName.split(" ")[0]}
-                    </h1>
-                    <p className="page__subtitle">
-                        {user?.unitName && <>יחידה: <strong>{user.unitName}</strong></>}
-                        {weekDoc?.weekNumber ? ` · שבוע ${weekDoc.weekNumber}` : ""}
-                    </p>
+                    <h1 className="page__title">שלום, {user?.fullName.split(" ")[0]}</h1>
+                    <p className="page__subtitle">{loading ? "טוען…" : mine.length ? `יש לך ${mine.length} משמרות בשבוע ${weekDoc?.weekNumber}. לחיצה על משמרת פותחת את הפרטים.` : "אין לך משמרות משובצות כרגע."}</p>
                 </div>
-            </motion.header>
+            </header>
 
-            <motion.section className="kpi-grid" aria-label="סיכום" variants={itemVariants}>
-                <motion.div
-                    className="kpi kpi--brand"
-                    whileHover={{ scale: 1.015 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span className="kpi__label">המשמרת הבאה</span>
-                        <Sparkles size={16} style={{ opacity: 0.7 }} />
+            <div className="nextup">
+                {next && (
+                    <div className="routesign">
+                        <span className="routesign__time">{fmtTime(next.startTime)}–{fmtTime(next.endTime)}</span>
+                        <span className="routesign__meta"><small>המשמרת הבאה</small><b>{fmtWeekday(next.startTime)} {fmtDayMonth(next.startTime)}</b>{next.title || "משמרת"}</span>
                     </div>
-                    <b className="kpi__value kpi__value--sm">
-                        {next ? fmtDateLong(next.startTime) : "—"}
-                    </b>
-                    <span className="kpi__hint">
-                        {next ? fmtTimeRange(next.startTime, next.endTime) : "אין משמרות קרובות"}
-                    </span>
-                </motion.div>
-
-                <motion.div
-                    className="kpi"
-                    whileHover={{ scale: 1.015 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span className="kpi__label">משמרות השבוע</span>
-                        <Calendar size={16} style={{ color: "var(--brand)" }} />
+                )}
+                {mine.length > 0 && (
+                    <div className="meter nextup__meter" aria-label="שעות שבועיות" style={{ marginBottom: 0 }}>
+                        <div className="meter__head"><span>שעות מתוכננות השבוע</span><b dir="ltr">{hours.toFixed(1).replace(/\.0$/, "")} / {limit}</b></div>
+                        <div className="meter__bar" aria-hidden>{Array.from({ length: segs }, (_, i) => <i key={i} className={i < filled ? (hours > limit ? "over" : "on") : ""} />)}</div>
                     </div>
-                    <b className="kpi__value">
-                        <CountUp value={myShifts.length} />
-                    </b>
-                    <span className="kpi__hint">משובצות במערכת</span>
-                </motion.div>
+                )}
+            </div>
 
-                <motion.div
-                    className="kpi"
-                    whileHover={{ scale: 1.015 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span className="kpi__label">שעות מתוכננות</span>
-                        <Hourglass size={16} style={{ color: "#38bdf8" }} />
-                    </div>
-                    <b className="kpi__value">
-                        {totalHours.toFixed(1).replace(/\.0$/, "")}
-                        <small>/{user?.maxWeeklyHours ?? 40}</small>
-                    </b>
-                    <span className="kpi__hint">מתוך מכסת השעות השבועית</span>
-                </motion.div>
+            {loading ? <div className="loading-state">טוען משמרות…</div> : <TimeGrid shifts={mine} startDate={weekDoc?.weekStartDate} onSelect={setDetail} />}
 
-                <motion.div
-                    className="kpi"
-                    whileHover={{ scale: 1.015 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span className="kpi__label">בקשות החלפה פתוחות</span>
-                        <ArrowLeftRight size={16} style={{ color: "var(--warning)" }} />
-                    </div>
-                    <b className="kpi__value">
-                        <CountUp value={openSwaps} />
-                    </b>
-                    <span className="kpi__hint">בבורסה או בהמתנה למנהל</span>
-                </motion.div>
-            </motion.section>
+            <Modal open={Boolean(detail)} onOpenChange={(o) => !o && setDetail(null)} title={detail?.title || "משמרת"} description={detail ? fmtDateLong(detail.startTime) : ""} size="sm">
+                {detail && (
+                    <>
+                        <div className="routesign" style={{ marginBottom: 14 }}>
+                            <span className="routesign__time">{fmtTimeRange(detail.startTime, detail.endTime)}</span>
+                            <span className="routesign__meta"><b>{durationHours(detail.startTime, detail.endTime)} שעות</b>{detail.title || "משמרת"}</span>
+                        </div>
+                        {detail.status === "swap_pending" && <p className="detail__reason"><small>סטטוס</small>{detailSwap?.status === "published_to_board" ? `מפורסמת בבורסה · ${detailSwap.applicantsCount} מועמדים` : "ממתינה לאישור המנהל לפרסום בבורסה"}</p>}
+                        <div className="dialog__actions">
+                            {!detailPast && detail.status !== "swap_pending" && <button type="button" className="btn btn--primary" onClick={() => { setAsking(detail); setDetail(null); }}><Repeat size={16} />בקש החלפה</button>}
+                            <button type="button" className="btn btn--ghost" onClick={() => setDetail(null)}>סגור</button>
+                        </div>
+                    </>
+                )}
+            </Modal>
 
-            {loading && <div className="loading-state">טוען משמרות...</div>}
-
-            {!loading && myShifts.length === 0 && (
-                <motion.div className="empty-card" variants={itemVariants}>
-                    <span className="empty-icon">🗓️</span>
-                    <h3>אין משמרות משובצות בשבוע זה</h3>
-                    <p>כשמנהל היחידה יפרסם לוח חדש — תקבל על כך התראה בזמן אמת.</p>
-                </motion.div>
-            )}
-
-            {[...grouped.entries()].map(([key, list]) => (
-                <motion.section key={key} className="day-group" variants={itemVariants}>
-                    <h2 className="day-group__title">
-                        <Clock size={16} style={{ opacity: 0.6 }} />
-                        <span>{fmtDateLong(list[0].startTime)}</span>
-                    </h2>
-                    <div className="shifts-grid">
-                        {list.map((shift) => (
-                            <ShiftCard
-                                key={shift.id}
-                                shift={shift}
-                                swap={swapOfShift(shift)}
-                                past={new Date(shift.endTime).getTime() <= now}
-                                onRequestSwap={setSelected}
-                            />
-                        ))}
-                    </div>
-                </motion.section>
-            ))}
-
-            {selected && (
-                <SwapRequestModal
-                    shift={selected}
-                    onConfirm={handleSwapConfirm}
-                    onClose={() => setSelected(null)}
-                />
-            )}
-        </motion.div>
+            {asking && <SwapRequestModal shift={asking} onConfirm={handleSwapConfirm} onClose={() => setAsking(null)} />}
+        </div>
     );
 }

@@ -1,66 +1,58 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-    ArrowLeftRight,
-    Inbox,
-    Clock,
-    Sparkles,
-    Calendar,
-    Search,
-    ArrowUpDown,
-    Briefcase,
-    Building2,
-    RotateCcw,
-} from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowLeft, Check, Hand } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { applySwap, getMySwaps } from "../api/swaps";
-import SwapCard from "../components/swaps/SwapCard";
+import Avatar, { AvatarStack } from "../components/ui/Avatar";
+import SearchInput from "../components/ui/SearchInput";
 import { useAuthStore } from "../store/authStore";
 import { useNotificationStore } from "../store/notificationStore";
 import { useSwapStore } from "../store/useSwapStore";
 import { useUiStore } from "../store/uiStore";
 import type { SwapRequest } from "../types";
-import { fmtDateShort, fmtTimeRange, timeAgo } from "../utils/datetime";
+import { fmtDayMonth, fmtTimeRange, fmtWeekday, timeAgo } from "../utils/datetime";
 import { getErrorMessage } from "../utils/getErrorMessage";
+import { personClass } from "../utils/person";
+import { matches } from "../utils/search";
 
-const STATUS_LABEL: Record<string, { text: string; tone: string }> = {
-    pending_manager_publish: { text: "ממתין לאישור פרסום", tone: "warning" },
-    published_to_board: { text: "פורסם בבורסה", tone: "info" },
-    closed_approved: { text: "אושר", tone: "success" },
-    closed_rejected: { text: "נדחה", tone: "danger" },
-    closed_employee_removed: { text: "בוטל", tone: "muted" },
+type Filter = "all" | "open" | "mine";
+const FILTERS: [Filter, string][] = [["all", "הכול"], ["open", "פתוחות עבורי"], ["mine", "הבקשות שלי"]];
+
+const STATUS: Record<string, { text: string; plate: string }> = {
+    pending_manager_publish: { text: "ממתינה לאישור מנהל", plate: "plate--warn" },
+    published_to_board: { text: "פורסמה בבורסה", plate: "plate--info" },
+    closed_approved: { text: "אושרה", plate: "plate--ok" },
+    closed_rejected: { text: "נדחתה", plate: "plate--bad" },
+    closed_employee_removed: { text: "בוטלה", plate: "plate--idle" },
 };
 
-type SortKey =
-    | "time_asc"
-    | "time_desc"
-    | "role_asc"
-    | "role_desc"
-    | "unit_asc"
-    | "unit_desc"
-    | "applicants_desc";
+const dayLabel = (iso: string) => {
+    const d = new Date(iso);
+    const days = Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 864e5);
+    if (days <= 0) return "היום";
+    if (days === 1) return "אתמול";
+    return d.toLocaleDateString("he-IL", { day: "numeric", month: "long" });
+};
 
 export default function SwapBoardPage() {
     const user = useAuthStore((s) => s.user);
     const addToast = useUiStore((s) => s.addToast);
     const swapsVersion = useNotificationStore((s) => s.swapsVersion);
     const { board, loadingBoard, fetchBoard } = useSwapStore();
+    const [params] = useSearchParams();
 
-    const [tab, setTab] = useState<"board" | "mine">("board");
+    const [filter, setFilter] = useState<Filter>("all");
+    const [q, setQ] = useState(params.get("q") ?? "");
     const [mine, setMine] = useState<SwapRequest[]>([]);
     const [busyId, setBusyId] = useState<string | null>(null);
-
-    // Filtering & Sorting State
-    const [sortBy, setSortBy] = useState<SortKey>("time_asc");
-    const [roleFilter, setRoleFilter] = useState<string>("all");
-    const [unitFilter, setUnitFilter] = useState<string>("all");
-    const [searchQuery, setSearchQuery] = useState<string>("");
+    const endRef = useRef<HTMLDivElement>(null);
 
     const refresh = useCallback(async () => {
         try {
             const [, my] = await Promise.all([fetchBoard(), getMySwaps()]);
             setMine(my);
         } catch (err) {
-            addToast(getErrorMessage(err, "שגיאה בטעינת בורסת המשמרות"), "error");
+            addToast(getErrorMessage(err, "שגיאה בטעינת הבורסה"), "error");
         }
     }, [fetchBoard, addToast]);
 
@@ -68,11 +60,11 @@ export default function SwapBoardPage() {
         void refresh();
     }, [refresh, swapsVersion]);
 
-    async function handleApply(swapId: string) {
-        setBusyId(swapId);
+    async function apply(id: string) {
+        setBusyId(id);
         try {
-            await applySwap(swapId);
-            addToast("המועמדות הוגשה — ממתין לאישור המנהל", "success");
+            await applySwap(id);
+            addToast("המועמדות הוגשה. המנהל יחליט בקרוב.", "success");
             await refresh();
         } catch (err) {
             addToast(getErrorMessage(err, "שגיאה בהגשת מועמדות"), "error");
@@ -81,352 +73,120 @@ export default function SwapBoardPage() {
         }
     }
 
-    const available = board.filter((s) => s.requesterEmployeeCode !== user?.employeeCode);
+    // One conversation: other people's open requests + my own requests, oldest first.
+    const messages = useMemo(() => {
+        const me = user?.employeeCode;
+        const byId = new Map<string, SwapRequest>();
+        board.filter((s) => s.requesterEmployeeCode !== me).forEach((s) => byId.set(s._id, s));
+        mine.filter((s) => s.requesterEmployeeCode === me).forEach((s) => byId.set(s._id, s));
+        return [...byId.values()]
+            .filter((s) => (filter === "open" ? s.requesterEmployeeCode !== me && s.status === "published_to_board" : filter === "mine" ? s.requesterEmployeeCode === me : true))
+            .filter((s) => matches(q, s.requesterName, s.reason, s.shiftDetails?.title))
+            .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    }, [board, mine, user, filter, q]);
 
-    // Unique roles and units in available swaps
-    const uniqueRoles = useMemo(() => {
-        const set = new Set<string>();
-        available.forEach((s) => {
-            if (s.shiftDetails?.title) set.add(s.shiftDetails.title);
+    useEffect(() => {
+        endRef.current?.scrollIntoView({ block: "end" });
+    }, [messages.length]);
+
+    const groups = useMemo(() => {
+        const out: { label: string; items: SwapRequest[] }[] = [];
+        messages.forEach((m) => {
+            const label = dayLabel(m.createdAt);
+            const last = out[out.length - 1];
+            if (last && last.label === label) last.items.push(m);
+            else out.push({ label, items: [m] });
         });
-        return Array.from(set).sort();
-    }, [available]);
-
-    const uniqueUnits = useMemo(() => {
-        const set = new Set<string>();
-        available.forEach((s) => {
-            if (s.unitName) set.add(s.unitName);
-        });
-        return Array.from(set).sort();
-    }, [available]);
-
-    // Filtered & Sorted available list
-    const filteredSwaps = useMemo(() => {
-        const result = available.filter((s) => {
-            if (roleFilter !== "all" && (s.shiftDetails?.title ?? "") !== roleFilter) {
-                return false;
-            }
-            if (unitFilter !== "all" && s.unitName !== unitFilter) {
-                return false;
-            }
-            if (searchQuery.trim()) {
-                const q = searchQuery.toLowerCase().trim();
-                const title = (s.shiftDetails?.title ?? "").toLowerCase();
-                const unit = (s.unitName ?? "").toLowerCase();
-                const requester = (s.requesterName ?? "").toLowerCase();
-                if (!title.includes(q) && !unit.includes(q) && !requester.includes(q)) {
-                    return false;
-                }
-            }
-            return true;
-        });
-
-        return result.sort((a, b) => {
-            switch (sortBy) {
-                case "role_asc": {
-                    const rA = a.shiftDetails?.title ?? "";
-                    const rB = b.shiftDetails?.title ?? "";
-                    return rA.localeCompare(rB, "he");
-                }
-                case "role_desc": {
-                    const rA = a.shiftDetails?.title ?? "";
-                    const rB = b.shiftDetails?.title ?? "";
-                    return rB.localeCompare(rA, "he");
-                }
-                case "unit_asc": {
-                    return (a.unitName ?? "").localeCompare(b.unitName ?? "", "he");
-                }
-                case "unit_desc": {
-                    return (b.unitName ?? "").localeCompare(a.unitName ?? "", "he");
-                }
-                case "applicants_desc": {
-                    return (b.applicantsCount ?? 0) - (a.applicantsCount ?? 0);
-                }
-                case "time_desc": {
-                    const tA = a.shiftDetails?.startTime ? new Date(a.shiftDetails.startTime).getTime() : 0;
-                    const tB = b.shiftDetails?.startTime ? new Date(b.shiftDetails.startTime).getTime() : 0;
-                    return tB - tA;
-                }
-                case "time_asc":
-                default: {
-                    const tA = a.shiftDetails?.startTime ? new Date(a.shiftDetails.startTime).getTime() : 0;
-                    const tB = b.shiftDetails?.startTime ? new Date(b.shiftDetails.startTime).getTime() : 0;
-                    return tA - tB;
-                }
-            }
-        });
-    }, [available, roleFilter, unitFilter, searchQuery, sortBy]);
-
-    const hasActiveFilters = roleFilter !== "all" || unitFilter !== "all" || Boolean(searchQuery.trim());
-
-    const resetFilters = () => {
-        setRoleFilter("all");
-        setUnitFilter("all");
-        setSearchQuery("");
-        setSortBy("time_asc");
-    };
+        return out;
+    }, [messages]);
 
     return (
-        <motion.div
-            className="page"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        >
+        <div className="page">
             <header className="page-head">
                 <div>
                     <h1 className="page__title">בורסת משמרות</h1>
-                    <p className="page__subtitle">
-                        בקשות החלפה פעילות ביחידה שלך — מתעדכן בזמן אמת
-                    </p>
+                    <p className="page__subtitle">כאן עמיתים ביחידה מחפשים מחליף. כשמשמרת מתאימה לך, לחץ עליה והמנהל יאשר.</p>
                 </div>
-                <div className="segmented" role="tablist">
-                    <button
-                        role="tab"
-                        aria-selected={tab === "board"}
-                        className={tab === "board" ? "is-active" : ""}
-                        onClick={() => setTab("board")}
-                    >
-                        {tab === "board" && (
-                            <motion.span
-                                layoutId="swap-tab-pill"
-                                className="tab-active-indicator"
-                                transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                            />
-                        )}
-                        <span className="tab-label">בבורסה ({available.length})</span>
-                    </button>
-                    <button
-                        role="tab"
-                        aria-selected={tab === "mine"}
-                        className={tab === "mine" ? "is-active" : ""}
-                        onClick={() => setTab("mine")}
-                    >
-                        {tab === "mine" && (
-                            <motion.span
-                                layoutId="swap-tab-pill"
-                                className="tab-active-indicator"
-                                transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                            />
-                        )}
-                        <span className="tab-label">הבקשות שלי ({mine.length})</span>
-                    </button>
+                <div className="page-actions">
+                    <SearchInput label="חיפוש בבורסה" placeholder="חיפוש לפי עובד או סיבה" value={q} onChange={setQ} />
+                    <div className="filters" role="tablist" aria-label="סינון">
+                        {FILTERS.map(([key, label]) => (
+                            <button key={key} type="button" role="tab" aria-selected={filter === key} className={filter === key ? "is-active" : ""} onClick={() => setFilter(key)}>
+                                {filter === key && <motion.span layoutId="filter-pill" className="filters__pill" transition={{ type: "spring", stiffness: 460, damping: 36 }} />}
+                                {label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </header>
 
-            <AnimatePresence mode="wait">
-                {tab === "board" ? (
-                    <motion.div
-                        key="board-tab"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.18 }}
-                    >
-                        {/* Linear-Style Sorting & Filtering Toolbar */}
-                        {available.length > 0 && (
-                            <div className="swaps-toolbar">
-                                <div className="swaps-toolbar__search">
-                                    <Search size={15} className="swaps-toolbar__search-icon" />
-                                    <input
-                                        type="text"
-                                        placeholder="חיפוש לפי תפקיד, עובד או יחידה..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        aria-label="חיפוש בבורסה"
-                                    />
-                                </div>
+            <div className="chat">
+                {loadingBoard && messages.length === 0 && <div className="loading-state">טוען…</div>}
+                {!loadingBoard && messages.length === 0 && (
+                    <div className="detail__empty">
+                        <strong>{q ? "לא נמצאו תוצאות" : "הבורסה שקטה כרגע"}</strong>
+                        <span>{q ? "נסה חיפוש אחר." : "כשעמית יפרסם משמרת להחלפה היא תופיע כאן, ותקבל על כך התראה."}</span>
+                    </div>
+                )}
 
-                                <div className="swaps-toolbar__filters">
-                                    {/* Sort By Role or Unit or Time */}
-                                    <div className="swaps-filter-control" title="מיון משמרות">
-                                        <ArrowUpDown size={14} style={{ opacity: 0.7 }} />
-                                        <select
-                                            value={sortBy}
-                                            onChange={(e) => setSortBy(e.target.value as SortKey)}
-                                            aria-label="מיון משמרות"
-                                        >
-                                            <option value="time_asc">מועד משמרת (הקרוב ביותר)</option>
-                                            <option value="time_desc">מועד משמרת (הרחוק ביותר)</option>
-                                            <option value="role_asc">תפקיד (א׳ עד ת׳)</option>
-                                            <option value="role_desc">תפקיד (ת׳ עד א׳)</option>
-                                            <option value="unit_asc">יחידה (א׳ עד ת׳)</option>
-                                            <option value="unit_desc">יחידה (ת׳ עד א׳)</option>
-                                            <option value="applicants_desc">הכי מבוקש (לפי מועמדים)</option>
-                                        </select>
-                                    </div>
-
-                                    {/* Filter by Role */}
-                                    {uniqueRoles.length > 0 && (
-                                        <div className="swaps-filter-control" title="סינון לפי תפקיד">
-                                            <Briefcase size={14} style={{ opacity: 0.7 }} />
-                                            <select
-                                                value={roleFilter}
-                                                onChange={(e) => setRoleFilter(e.target.value)}
-                                                aria-label="סינון לפי תפקיד"
-                                            >
-                                                <option value="all">כל התפקידים ({uniqueRoles.length})</option>
-                                                {uniqueRoles.map((r) => (
-                                                    <option key={r} value={r}>
-                                                        {r}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
-
-                                    {/* Filter by Unit */}
-                                    {uniqueUnits.length > 0 && (
-                                        <div className="swaps-filter-control" title="סינון לפי יחידה">
-                                            <Building2 size={14} style={{ opacity: 0.7 }} />
-                                            <select
-                                                value={unitFilter}
-                                                onChange={(e) => setUnitFilter(e.target.value)}
-                                                aria-label="סינון לפי יחידה"
-                                            >
-                                                <option value="all">כל היחידות ({uniqueUnits.length})</option>
-                                                {uniqueUnits.map((u) => (
-                                                    <option key={u} value={u}>
-                                                        {u}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
-
-                                    {/* Reset Filters Button */}
-                                    {hasActiveFilters && (
-                                        <button
-                                            type="button"
-                                            className="swaps-clear-btn"
-                                            onClick={resetFilters}
-                                            title="נקה את כל הסינונים"
-                                        >
-                                            <RotateCcw size={12} />
-                                            <span>איפוס</span>
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {loadingBoard && board.length === 0 && (
-                            <div className="loading-state">טוען בורסת משמרות...</div>
-                        )}
-
-                        {!loadingBoard && available.length === 0 && (
-                            <div className="empty-card">
-                                <span className="empty-icon">
-                                    <Sparkles size={36} style={{ color: "var(--brand)" }} />
-                                </span>
-                                <h3>אין בקשות פתוחות כרגע</h3>
-                                <p>
-                                    כשעמית יפרסם משמרת להחלפה — תקבל התראה ותוכל להגיש מועמדות.
-                                </p>
-                            </div>
-                        )}
-
-                        {!loadingBoard && available.length > 0 && filteredSwaps.length === 0 && (
-                            <div className="empty-card">
-                                <span className="empty-icon">
-                                    <Inbox size={36} style={{ color: "var(--text-3)" }} />
-                                </span>
-                                <h3>לא נמצאו משמרות תואמות לסינון</h3>
-                                <p>נסה לשנות את התפקיד, היחידה או את החיפוש החופשי.</p>
-                                <button
-                                    type="button"
-                                    className="swaps-clear-btn"
-                                    onClick={resetFilters}
-                                    style={{ marginTop: "12px" }}
-                                >
-                                    <RotateCcw size={13} />
-                                    <span>איפוס כל הסינונים</span>
-                                </button>
-                            </div>
-                        )}
-
-                        <div className="swaps-grid">
-                            {filteredSwaps.map((swap) => (
-                                <SwapCard
-                                    key={swap._id}
-                                    swap={swap}
-                                    currentEmployeeCode={user?.employeeCode ?? ""}
-                                    busy={busyId === swap._id}
-                                    onApply={() => handleApply(swap._id)}
-                                />
-                            ))}
-                        </div>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        key="mine-tab"
-                        className="timeline"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.18 }}
-                    >
-                        {mine.length === 0 && (
-                            <div className="empty-card">
-                                <span className="empty-icon">
-                                    <Inbox size={36} style={{ color: "var(--text-3)" }} />
-                                </span>
-                                <h3>עוד לא הגשת בקשות או מועמדויות</h3>
-                                <p>בקשות החלפה שתגיש או מועמדויות שתיקח יופיעו כאן.</p>
-                            </div>
-                        )}
-                        {mine.map((s) => {
-                            const label = STATUS_LABEL[s.status] || { text: s.status, tone: "muted" };
-                            const iAmRequester = s.requesterEmployeeCode === user?.employeeCode;
+                {groups.map((g) => (
+                    <div key={g.label} style={{ display: "contents" }}>
+                        <span className="chat__day">{g.label}</span>
+                        {g.items.map((s, i) => {
+                            const me = s.requesterEmployeeCode === user?.employeeCode;
+                            const sh = s.shiftDetails;
                             const myApp = s.applicants.find((a) => a.employeeCode === user?.employeeCode);
+                            const st = STATUS[s.status];
                             return (
                                 <motion.article
                                     key={s._id}
-                                    className="timeline-item"
-                                    whileHover={{ y: -2 }}
-                                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                                    layout
+                                    className={`msg ${me ? "msg--mine" : ""} ${personClass(s.requesterEmployeeCode)}`}
+                                    initial={{ opacity: 0, y: 18, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 340, damping: 30, delay: Math.min(i, 6) * 0.05 }}
                                 >
-                                    <div className="timeline-item__main">
-                                        <strong style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                                            <ArrowLeftRight size={14} style={{ opacity: 0.7 }} />
-                                            <span>
-                                                {iAmRequester
-                                                    ? "בקשת ההחלפה שלי"
-                                                    : `מועמדות להחלפה של ${s.requesterName}`}
-                                            </span>
-                                        </strong>
-                                        {s.shiftDetails && (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--text-2)" }}>
-                                                <Calendar size={13} style={{ opacity: 0.6 }} />
-                                                <span>
-                                                    {fmtDateShort(s.shiftDetails.startTime)} · {fmtTimeRange(s.shiftDetails.startTime, s.shiftDetails.endTime)}
-                                                </span>
-                                            </span>
+                                    {!me && <Avatar name={s.requesterName} code={s.requesterEmployeeCode} size="md" />}
+                                    <div className="msg__bubble">
+                                        <div className="msg__meta">
+                                            <strong>{me ? "הבקשה שלך" : s.requesterName}</strong>
+                                            <small>{timeAgo(s.createdAt)}</small>
+                                        </div>
+                                        <p className="msg__text">{s.reason ? `“${s.reason}”` : me ? "ביקשת להחליף משמרת" : "מחפש/ת מחליף/ה למשמרת"}</p>
+                                        {sh && (
+                                            <div className="msg__shift">
+                                                <b>{fmtTimeRange(sh.startTime, sh.endTime)}</b>
+                                                <span><em>{fmtWeekday(sh.startTime)} {fmtDayMonth(sh.startTime)}</em>{sh.title || "משמרת"}</span>
+                                            </div>
                                         )}
-                                        <small style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
-                                            <Clock size={11} style={{ opacity: 0.5 }} />
-                                            <span>{timeAgo(s.createdAt)}</span>
-                                            {s.replacementName && iAmRequester && (
-                                                <span> · עבר ל{s.replacementName}</span>
+                                        <div className="msg__foot">
+                                            {me ? (
+                                                <>
+                                                    <span className={`plate ${st.plate}`}>{st.text}</span>
+                                                    {s.status === "published_to_board" && <small>{s.applicantsCount} מועמדים</small>}
+                                                    {s.status === "closed_approved" && s.replacementName && <small>עברה אל {s.replacementName}</small>}
+                                                </>
+                                            ) : myApp ? (
+                                                <span className="plate plate--idle"><Check size={13} />{myApp.status === "rejected" ? "לא התקבלת" : "הגשת מועמדות"}</span>
+                                            ) : (
+                                                <>
+                                                    <button type="button" className="btn btn--primary btn--sm" disabled={busyId === s._id} onClick={() => apply(s._id)}><Hand size={15} />אני לוקח/ת את המשמרת</button>
+                                                    <AvatarStack people={s.applicants.map((a) => ({ name: a.employeeName, code: a.employeeCode }))} />
+                                                </>
                                             )}
-                                        </small>
+                                        </div>
                                     </div>
-                                    <span className={`chip chip--${label.tone}`}>
-                                        {!iAmRequester && myApp
-                                            ? myApp.status === "approved"
-                                                ? "התקבלת"
-                                                : myApp.status === "rejected"
-                                                  ? "לא התקבלת"
-                                                  : "ממתין להחלטה"
-                                            : label.text}
-                                    </span>
                                 </motion.article>
                             );
                         })}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </motion.div>
+                    </div>
+                ))}
+                <div ref={endRef} />
+
+                <div className="chat__bar">
+                    <span>הבורסה לקריאה בלבד. כדי לבקש החלפה, בחר משמרת בלוח שלך.</span>
+                    <Link to="/my-shifts" className="btn btn--ghost btn--sm">למשמרות שלי<ArrowLeft size={15} /></Link>
+                </div>
+            </div>
+        </div>
     );
 }

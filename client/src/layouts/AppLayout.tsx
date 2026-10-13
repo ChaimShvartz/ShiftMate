@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import Navbar from "../components/layout/Navbar";
+import Footer from "../components/layout/Footer";
+import TopNav from "../components/layout/TopNav";
 import { useAuthStore } from "../store/authStore";
 import { useNotificationStore } from "../store/notificationStore";
 
@@ -19,14 +20,12 @@ export default function AppLayout() {
     }, [token, role, connect, disconnect, load]);
 
     return (
-        <div className="app-layout" dir="rtl">
-            <Navbar />
+        <div className="shell" dir="rtl">
+            <TopNav />
             <main className="app-main">
                 <Outlet />
             </main>
-            <footer className="app-footer">
-                © {new Date().getFullYear()} ShiftMate — ניהול ובורסת משמרות בזמן אמת
-            </footer>
+            <Footer />
         </div>
     );
 }

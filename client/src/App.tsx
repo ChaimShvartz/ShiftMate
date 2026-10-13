@@ -1,20 +1,19 @@
+import { MotionConfig } from "framer-motion";
 import { BrowserRouter } from "react-router-dom";
+import CommandPalette from "./components/search/CommandPalette";
 import ToastContainer from "./components/notifications/ToastContainer";
 import ConfirmHost from "./components/ui/ConfirmHost";
-import { useReveal } from "./hooks/useReveal";
 import AppRoutes from "./routes/AppRoutes";
 
-const getBody = () => document.body;
-
-const App = () => {
-    useReveal(getBody);
-    return (
-    <BrowserRouter>
-        <AppRoutes />
-        <ToastContainer />
-        <ConfirmHost />
-    </BrowserRouter>
-    );
-};
+const App = () => (
+    <MotionConfig reducedMotion="user">
+        <BrowserRouter>
+            <AppRoutes />
+            <CommandPalette />
+            <ToastContainer />
+            <ConfirmHost />
+        </BrowserRouter>
+    </MotionConfig>
+);
 
 export default App;

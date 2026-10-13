@@ -1,11 +1,11 @@
-import { motion } from "framer-motion";
-import { Sun, Laptop, Moon } from "lucide-react";
+import * as ToggleGroup from "@radix-ui/react-toggle-group";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useThemeStore, type ThemeMode } from "../../store/themeStore";
 
-const OPTIONS: { mode: ThemeMode; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-    { mode: "light", label: "מצב בהיר", icon: Sun },
-    { mode: "system", label: "לפי המכשיר", icon: Laptop },
-    { mode: "dark", label: "מצב כהה", icon: Moon },
+const OPTIONS: { mode: ThemeMode; label: string; Icon: typeof Sun }[] = [
+    { mode: "light", label: "מצב בהיר", Icon: Sun },
+    { mode: "system", label: "לפי המכשיר", Icon: Monitor },
+    { mode: "dark", label: "מצב כהה", Icon: Moon },
 ];
 
 export default function ThemeToggle() {
@@ -13,34 +13,12 @@ export default function ThemeToggle() {
     const setMode = useThemeStore((s) => s.setMode);
 
     return (
-        <div className="theme-toggle" role="radiogroup" aria-label="ערכת נושא">
-            {OPTIONS.map((o) => {
-                const Icon = o.icon;
-                const active = mode === o.mode;
-                return (
-                    <button
-                        key={o.mode}
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        aria-label={o.label}
-                        title={o.label}
-                        className={active ? "is-active" : ""}
-                        onClick={() => setMode(o.mode)}
-                    >
-                        {active && (
-                            <motion.span
-                                layoutId="theme-active-pill"
-                                className="theme-toggle__active-pill"
-                                transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                            />
-                        )}
-                        <span style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Icon size={14} />
-                        </span>
-                    </button>
-                );
-            })}
-        </div>
+        <ToggleGroup.Root className="theme-toggle" type="single" value={mode} onValueChange={(v) => v && setMode(v as ThemeMode)} aria-label="ערכת נושא">
+            {OPTIONS.map(({ mode: m, label, Icon }) => (
+                <ToggleGroup.Item key={m} value={m} aria-label={label} title={label}>
+                    <Icon size={15} />
+                </ToggleGroup.Item>
+            ))}
+        </ToggleGroup.Root>
     );
 }

@@ -15,7 +15,7 @@ export default function ComplianceBadge({ result }: { result: ComplianceResult }
                 {isOk ? (
                     <CheckCircle2 size={14} style={{ color: "var(--success)" }} />
                 ) : isWarning ? (
-                    <AlertTriangle size={14} style={{ color: "var(--warning)" }} />
+                    <AlertTriangle size={14} style={{ color: "var(--on-signal)" }} />
                 ) : (
                     <ShieldAlert size={14} style={{ color: "var(--danger)" }} />
                 )}

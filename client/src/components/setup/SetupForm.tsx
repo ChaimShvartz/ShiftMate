@@ -41,7 +41,7 @@ const SetupForm = ({ onSubmit, loading, error }: SetupFormProps) => {
     return (
         <div className="setup-form-container" dir="rtl">
             <header className="setup-header">
-                <Logo size={48} />
+                <Logo height={44} />
                 <h2>הקמת מערכת ראשונית</h2>
                 <p>יצירת חשבון מנהל ראשי למערכת</p>
             </header>

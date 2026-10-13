@@ -65,15 +65,6 @@ export function timeAgo(iso: string): string {
     return `לפני ${Math.floor(h / 24)} ימים`;
 }
 
-// Position of a shift on the 06:00–24:00 ruler, as percentages (UTC wall-clock).
-export function rulerSpan(start: string, end: string) {
-    const h = (iso: string) => {
-        const d = new Date(iso);
-        return d.getUTCHours() + d.getUTCMinutes() / 60;
-    };
-    const from = Math.max(6, Math.min(24, h(start)));
-    let to = h(end);
-    if (to <= h(start)) to = 24; // crosses midnight
-    to = Math.max(6, Math.min(24, to));
-    return { left: ((from - 6) / 18) * 100, width: Math.max(2, ((to - from) / 18) * 100) };
-}
+export const isToday = (iso: string) => dayKey(iso) === nowFloating().toISOString().slice(0, 10);
+export const fmtWeekday = (iso: string) => new Date(iso).toLocaleDateString("he-IL", { timeZone: "UTC", weekday: "long" });
+export const fmtDayMonth = (iso: string) => new Date(iso).toLocaleDateString("he-IL", { timeZone: "UTC", day: "numeric", month: "numeric" });

@@ -18,7 +18,7 @@ const SetupSuccess = ({ adminCode, onLoginClick }: SetupSuccessProps) => {
     return (
         <div className="setup-success-container" dir="rtl">
             <header className="setup-header">
-                <Logo size={56} />
+                <Logo height={44} />
                 <h2>המערכת הוקמה בהצלחה!</h2>
                 <p>נוצר מנהל ראשי חדש למערכת.</p>
             </header>
@@ -31,10 +31,10 @@ const SetupSuccess = ({ adminCode, onLoginClick }: SetupSuccessProps) => {
                     className="btn-copy-code"
                     onClick={handleCopy}
                 >
-                    {copied ? "✓ הועתק בהצלחה!" : "📋 העתק קוד"}
+                    {copied ? "הועתק" : "העתק קוד"}
                 </button>
                 <p className="code-warning">
-                    ⚠️ שמור קוד זה! הוא נדרש לצורך כל התחברות למערכת.
+                    שמור קוד זה! הוא נדרש לצורך כל התחברות למערכת.
                 </p>
             </section>
 

@@ -1,8 +1,10 @@
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Calendar, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { deleteShift, getShifts, updateShift } from "../api/shifts";
 import { getAllUsers } from "../api/users";
+import SearchInput from "../components/ui/SearchInput";
 import ExcelImportModal from "../components/manager/ExcelImportModal";
 import ShiftEditModal from "../components/manager/ShiftEditModal";
 import WeekScheduleView from "../components/manager/WeekScheduleView";
@@ -21,6 +23,8 @@ interface SchedulePageState {
 }
 
 const SchedulePage = () => {
+    const [params] = useSearchParams();
+    const [query, setQuery] = useState(params.get("q") ?? "");
     const [state, setState] = useState<SchedulePageState>({
         week: null,
         employees: [],
@@ -111,105 +115,61 @@ const SchedulePage = () => {
     };
 
     return (
-        <motion.div
-            className="schedule-page"
-            dir="rtl"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        >
-            <header className="page-header">
-                <div className="page-title-wrap">
-                    <h1 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <Calendar size={28} style={{ color: "var(--brand)" }} />
-                        <span>לוח משמרות יחידתי</span>
-                    </h1>
-                    <p>צפייה, עריכה וניהול שיבוץ שבועי באקסל</p>
+        <div className="page">
+            <header className="page-head">
+                <div>
+                    <h1 className="page__title">לוח משמרות</h1>
+                    <p className="page__subtitle">
+                        {state.week?.weekNumber ? <>שבוע <b>{state.week.weekNumber}</b> · {state.week.shifts.length} משמרות</> : "אין עדיין לוח לשבוע הזה"}. לחיצה על משמרת פותחת עריכה.
+                    </p>
                 </div>
-
-                <div className="page-actions-wrap">
-                    <motion.button
-                        type="button"
-                        className="btn-primary"
-                        onClick={() =>
-                            setState((prev) => ({
-                                ...prev,
-                                isImportModalOpen: true,
-                            }))
-                        }
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
+                <div className="page-actions">
+                    <SearchInput label="חיפוש בלוח" placeholder="חיפוש עובד או משמרת" value={query} onChange={setQuery} />
+                    <button type="button" className="btn btn--primary" onClick={() => setState((prev) => ({ ...prev, isImportModalOpen: true }))}>
                         <Upload size={16} />
-                        <span>העלאת לוח משמרות (Excel)</span>
-                    </motion.button>
+                        העלאת לוח (Excel)
+                    </button>
                 </div>
             </header>
 
-            {state.feedback && (
-                <div className="feedback-banner success">{state.feedback}</div>
-            )}
-            {state.error && (
-                <div className="feedback-banner error">{state.error}</div>
-            )}
+            {state.feedback && <div className="feedback-banner"><span>{state.feedback}</span><button type="button" className="btn-dismiss" aria-label="סגור" onClick={() => setState((p) => ({ ...p, feedback: null }))}><X size={16} /></button></div>}
+            {state.error && <div className="error-banner"><span>{state.error}</span></div>}
 
             {(state.week?.weeks?.length ?? 0) > 1 && (
-                <div className="week-switch" role="group" aria-label="בחירת שבוע">
-                    {state.week?.weeks?.map((w) => {
-                        const active = w.weekNumber === state.week?.weekNumber;
-                        return (
-                            <button
-                                key={w.weekNumber}
-                                type="button"
-                                className={active ? "is-active" : ""}
-                                onClick={() => loadData(w.weekNumber)}
-                            >
-                                {active && (
-                                    <motion.span
-                                        layoutId="week-active-pill"
-                                        className="tab-active-indicator"
-                                        transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                                    />
-                                )}
-                                <span className="tab-label">שבוע {w.weekNumber}</span>
+                <div className="toolbar">
+                    <div className="week-switch" role="group" aria-label="בחירת שבוע">
+                        {state.week?.weeks?.map((w) => (
+                            <button key={w.weekNumber} type="button" className={w.weekNumber === state.week?.weekNumber ? "is-active" : ""} onClick={() => loadData(w.weekNumber)}>
+                                שבוע {w.weekNumber}
                             </button>
-                        );
-                    })}
+                        ))}
+                    </div>
                 </div>
             )}
 
             {state.loading ? (
-                <div className="loading-state">טוען לוח משמרות...</div>
+                <div className="loading-state">טוען לוח משמרות…</div>
             ) : (
                 <WeekScheduleView
                     week={state.week}
                     employees={state.employees}
-                    onEditShift={(shift) =>
-                        setState((prev) => ({ ...prev, editingShift: shift }))
-                    }
+                    query={query}
+                    onEditShift={(shift) => setState((prev) => ({ ...prev, editingShift: shift }))}
                     onDeleteShift={handleDeleteShift}
                 />
             )}
 
-            <ExcelImportModal
-                isOpen={state.isImportModalOpen}
-                onClose={() =>
-                    setState((prev) => ({ ...prev, isImportModalOpen: false }))
-                }
-                onImportSuccess={handleImportSuccess}
-            />
+            <ExcelImportModal isOpen={state.isImportModalOpen} onClose={() => setState((prev) => ({ ...prev, isImportModalOpen: false }))} onImportSuccess={handleImportSuccess} />
 
             <ShiftEditModal
                 isOpen={Boolean(state.editingShift)}
-                onClose={() =>
-                    setState((prev) => ({ ...prev, editingShift: null }))
-                }
+                onClose={() => setState((prev) => ({ ...prev, editingShift: null }))}
                 shift={state.editingShift}
                 weekNumber={state.week?.weekNumber || 1}
                 employees={state.employees}
                 onSave={handleSaveShift}
             />
-        </motion.div>
+        </div>
     );
 };
 

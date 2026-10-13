@@ -77,6 +77,18 @@ export const usersService = {
             throwHttpError(404, "User not found");
         }
 
+        // A unit must never be left without a manager: managers can only be replaced.
+        if (userRecord.role === "manager") {
+            throwHttpError(
+                409,
+                "A unit manager cannot be deleted - replace the manager instead",
+            );
+        }
+
+        if (userRecord.role === "admin") {
+            throwHttpError(403, "The system administrator cannot be deleted");
+        }
+
         if (hasActiveShifts) {
             throwHttpError(400, "Cannot delete employee with active shifts");
         }

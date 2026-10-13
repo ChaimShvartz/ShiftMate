@@ -29,6 +29,11 @@ const exact: Record<string, string> = {
     "Record already exists": "הרשומה כבר קיימת במערכת",
     "Cannot delete employee with active shifts":
         "לא ניתן למחוק עובד שעדיין משובץ למשמרות — על מנהל היחידה להסיר אותו מהשיבוץ תחילה",
+    "Cannot delete a unit manager. A unit must always have an active manager; use replace manager instead":
+        "לא ניתן למחוק מנהל יחידה — יחידה חייבת להכיל מנהל פעיל תמיד, יש להשתמש באפשרות 'החלף מנהל'",
+    "A unit manager cannot be deleted - replace the manager instead":
+        "לא ניתן למחוק מנהל יחידה — יש להחליף אותו כדי שלא תישאר יחידה ללא מנהל",
+    "The system administrator cannot be deleted": "לא ניתן למחוק את המנהל הראשי",
     "Invalid email format": "כתובת האימייל אינה תקינה",
     "Admin cannot be assigned to a unit": "מנהל ראשי אינו משויך ליחידה",
     "Admin cannot have max weekly hours": "למנהל ראשי אין מגבלת שעות שבועית",

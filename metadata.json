@@ -1,8 +1,0 @@
-{
-  "name": "ShiftMate",
-  "description": "Premium organizational system for managing employees, schedules, and live shift swaps with managerial oversight.",
-  "permissions": [],
-  "capabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
-}

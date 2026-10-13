@@ -1,184 +1,86 @@
-import { motion } from "framer-motion";
-import { Clock, User, Edit2, Trash2, Calendar } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import { useMemo } from "react";
 import { useUiStore } from "../../store/uiStore";
-import type { Shift, ShiftWeek, User as UserType } from "../../types";
-import { fmtDateLong, fmtTimeRange } from "../../utils/datetime";
+import type { Shift, ShiftWeek, User } from "../../types";
+import { dayKey, fmtDayMonth, fmtTimeRange, fmtWeekday, isToday } from "../../utils/datetime";
+import { personClass } from "../../utils/person";
+import { matches } from "../../utils/search";
+import Avatar from "../ui/Avatar";
 
-interface WeekScheduleViewProps {
+interface Props {
     week: ShiftWeek | null;
-    employees: UserType[];
+    employees: User[];
+    query: string;
     onEditShift: (shift: Shift) => void;
     onDeleteShift: (shiftId: number) => Promise<void>;
 }
 
-const WeekScheduleView = ({
-    week,
-    employees,
-    onEditShift,
-    onDeleteShift,
-}: WeekScheduleViewProps) => {
-    if (!week || !week.shifts || week.shifts.length === 0) {
+// People × days. Each cell lists that person's shifts for that day.
+export default function WeekScheduleView({ week, employees, query, onEditShift, onDeleteShift }: Props) {
+    const shifts = useMemo(() => week?.shifts ?? [], [week]);
+
+    const days = useMemo(() => {
+        const keys = [...new Set(shifts.map((s) => dayKey(s.startTime)))].sort();
+        return keys;
+    }, [shifts]);
+
+    const rows = useMemo(() => {
+        const known = new Set(employees.map((e) => e.employeeCode));
+        const unknown = [...new Set(shifts.map((s) => s.assignedEmployeeCode).filter((c) => c && !known.has(c)))].map((c) => ({ employeeCode: c, fullName: `עובד #${c}` }) as User);
+        return [...employees, ...unknown].filter((e) => {
+            const own = shifts.filter((s) => s.assignedEmployeeCode === e.employeeCode);
+            return matches(query, e.fullName, e.employeeCode, own.map((s) => s.title).join(" "));
+        });
+    }, [employees, shifts, query]);
+
+    if (!week || shifts.length === 0) {
         return (
-            <div className="empty-schedule-card">
-                <span className="empty-icon">
-                    <Calendar size={40} style={{ color: "var(--brand)" }} />
-                </span>
-                <h3>אין משמרות להצגה בשבוע זה</h3>
-                <p>
-                    לא נמצאו משמרות עבור היחידה. ניתן להעלות קובץ שיבוץ באקסל
-                    בכל עת.
-                </p>
+            <div className="detail__empty">
+                <strong>אין משמרות בשבוע הזה</strong>
+                <span>העלה קובץ שיבוץ (אקסל) כדי ליצור את לוח השבוע. אחרי ההעלאה אפשר לערוך משמרת בודדת בלחיצה עליה.</span>
             </div>
         );
     }
 
-    const employeeMap = new Map<string, string>();
-    employees.forEach((emp) => {
-        employeeMap.set(emp.employeeCode, emp.fullName);
-    });
-
-    const shiftsByDay = new Map<string, Shift[]>();
-    week.shifts.forEach((shift) => {
-        const dayKey = shift.startTime
-            ? shift.startTime.split("T")[0]
-            : "unknown";
-        const current = shiftsByDay.get(dayKey) || [];
-        current.push(shift);
-        shiftsByDay.set(dayKey, current);
-    });
-
-    const sortedDayKeys = Array.from(shiftsByDay.keys()).sort();
-
-    const handleDelete = async (shift: Shift) => {
-        const empName =
-            employeeMap.get(shift.assignedEmployeeCode) ||
-            `#${shift.assignedEmployeeCode}`;
-        const ok = await useUiStore.getState().confirm({
-            title: "מחיקת משמרת",
-            message: `למחוק את המשמרת של ${empName}? אם קיימת עליה בקשת החלפה — היא תיסגר.`,
-            confirmLabel: "מחק משמרת",
-            danger: true,
-        });
-        if (ok) await onDeleteShift(shift.id);
+    const remove = async (s: Shift, name: string) => {
+        const ok = await useUiStore.getState().confirm({ title: "מחיקת משמרת", message: `המשמרת של ${name} תוסר מהלוח. אם יש עליה בקשת החלפה — היא תיסגר.`, confirmLabel: "מחק משמרת", danger: true });
+        if (ok) await onDeleteShift(s.id);
     };
 
     return (
-        <div className="week-schedule-view">
-            <header className="schedule-header-meta">
-                <h2>שבוע מספר {week.weekNumber}</h2>
-                <span className="unit-tag">יחידה: {week.unitName}</span>
-                <span className="total-shifts-tag">
-                    סה״כ משמרות: {week.shifts.length}
-                </span>
-            </header>
-
-            <div className="days-columns-container">
-                {sortedDayKeys.map((dayKey) => {
-                    const dayShifts = shiftsByDay.get(dayKey) || [];
-                    const dayTitle = fmtDateLong(`${dayKey}T00:00:00Z`);
-
-                    return (
-                        <div key={dayKey} className="day-column">
-                            <div className="day-column-header">
-                                <h4>{dayTitle}</h4>
-                                <span className="day-date">{dayKey}</span>
-                            </div>
-
-                            <div className="day-shifts-list">
-                                {dayShifts.map((shift) => {
-                                    const employeeName =
-                                        employeeMap.get(
-                                            shift.assignedEmployeeCode,
-                                        ) ||
-                                        `עובד #${shift.assignedEmployeeCode}`;
-
-                                    return (
-                                        <motion.article
-                                            key={shift.id}
-                                            className={`shift-card status-${shift.status}`}
-                                            whileHover={{ y: -3 }}
-                                            transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                                            layout
-                                        >
-                                            <header className="shift-card-header">
-                                                <span className="shift-time" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
-                                                    <Clock size={13} style={{ opacity: 0.6 }} />
-                                                    <span>
-                                                        {fmtTimeRange(
-                                                            shift.startTime,
-                                                            shift.endTime,
-                                                        )}
-                                                    </span>
-                                                </span>
-                                                <span
-                                                    className={`shift-badge badge-${shift.status}`}
-                                                >
-                                                    {shift.status ===
-                                                    "swap_pending"
-                                                        ? "בהמתנה להחלפה"
-                                                        : "משובץ"}
-                                                </span>
-                                            </header>
-
-                                            <div className="shift-card-body">
-                                                {shift.title && (
-                                                    <h5 className="shift-title">
-                                                        {shift.title}
-                                                    </h5>
-                                                )}
-                                                <div className="shift-employee-info" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                                    <User size={13} style={{ opacity: 0.6 }} />
-                                                    <strong>
-                                                        {employeeName}
-                                                    </strong>
-                                                    <span className="emp-code">
-                                                        (#
-                                                        {
-                                                            shift.assignedEmployeeCode
-                                                        }
-                                                        )
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <footer className="shift-card-actions">
-                                                <motion.button
-                                                    type="button"
-                                                    className="btn-edit-shift"
-                                                    onClick={() =>
-                                                        onEditShift(shift)
-                                                    }
-                                                    whileTap={{ scale: 0.95 }}
-                                                >
-                                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                                                        <Edit2 size={12} />
-                                                        <span>ערוך</span>
-                                                    </span>
-                                                </motion.button>
-                                                <motion.button
-                                                    type="button"
-                                                    className="btn-delete-shift"
-                                                    onClick={() =>
-                                                        handleDelete(shift)
-                                                    }
-                                                    whileTap={{ scale: 0.95 }}
-                                                >
-                                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                                                        <Trash2 size={12} />
-                                                        <span>מחק</span>
-                                                    </span>
-                                                </motion.button>
-                                            </footer>
-                                        </motion.article>
-                                    );
-                                })}
-                            </div>
+        <div className="roster">
+            <div className="roster__grid" style={{ gridTemplateColumns: `minmax(170px, 210px) repeat(${days.length}, minmax(120px, 1fr))` }}>
+                <div className="roster__corner">עובד</div>
+                {days.map((d) => (
+                    <div key={d} className={`roster__day ${isToday(`${d}T00:00:00Z`) ? "is-today" : ""}`}>
+                        {fmtWeekday(`${d}T00:00:00Z`)}
+                        <small>{fmtDayMonth(`${d}T00:00:00Z`)}</small>
+                    </div>
+                ))}
+                {rows.length === 0 && <div className="inbox__empty" style={{ gridColumn: "1 / -1" }}>לא נמצאו עובדים שמתאימים לחיפוש.</div>}
+                {rows.map((e) => (
+                    <div key={e.employeeCode} style={{ display: "contents" }}>
+                        <div className="roster__who">
+                            <Avatar name={e.fullName} code={e.employeeCode} size="sm" />
+                            <div style={{ minWidth: 0 }}><strong>{e.fullName}</strong><small>#{e.employeeCode}</small></div>
                         </div>
-                    );
-                })}
+                        {days.map((d) => (
+                            <div key={d} className="roster__cell">
+                                {shifts.filter((s) => s.assignedEmployeeCode === e.employeeCode && dayKey(s.startTime) === d).map((s) => (
+                                    <div key={s.id} style={{ position: "relative" }}>
+                                        <button type="button" className={`shiftblock ${personClass(e.employeeCode)} ${s.status === "swap_pending" ? "shiftblock--swap" : ""}`} onClick={() => onEditShift(s)} title="לחץ לעריכה">
+                                            <b>{fmtTimeRange(s.startTime, s.endTime)}</b>
+                                            <span>{s.title || "משמרת"}{s.status === "swap_pending" ? " · בהחלפה" : ""}</span>
+                                        </button>
+                                        <button type="button" aria-label="מחק משמרת" className="btn-close" style={{ position: "absolute", insetBlockStart: 2, insetInlineEnd: 2, width: 22, height: 22 }} onClick={() => void remove(s, e.fullName)}><Trash2 size={12} /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                ))}
             </div>
+            <div className="roster__legend"><span><i />משובץ</span><span><i className="sw" />בתהליך החלפה</span><span className="muted">סה״כ {shifts.length} משמרות</span></div>
         </div>
     );
-};
-
-export default WeekScheduleView;
+}
