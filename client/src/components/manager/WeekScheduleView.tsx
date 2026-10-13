@@ -20,13 +20,10 @@ interface Props {
 export default function WeekScheduleView({ week, employees, query, onEditShift, onDeleteShift }: Props) {
     const shifts = useMemo(() => week?.shifts ?? [], [week]);
 
-    // Always the full Sunday-Saturday week, so a shift can be added on an empty day.
     const days = useMemo(() => {
-        if (!week) return [];
-        const a = new Date(week.weekStartDate);
-        const sunday = Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate()) - a.getUTCDay() * 864e5;
-        return Array.from({ length: 7 }, (_, i) => new Date(sunday + i * 864e5).toISOString().slice(0, 10));
-    }, [week]);
+        const keys = [...new Set(shifts.map((s) => dayKey(s.startTime)))].sort();
+        return keys;
+    }, [shifts]);
 
     const rows = useMemo(() => {
         const known = new Set(employees.map((e) => e.employeeCode));
