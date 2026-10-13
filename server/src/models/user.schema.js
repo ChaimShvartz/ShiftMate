@@ -1,16 +1,11 @@
 import { z } from "zod";
 
-export const ROLE_VALUES = ["admin", "manager", "employee"];
-
-// Everyone signs in with their 6-digit code; managers/admin may also use their email.
+// Everyone signs in with their 6-digit employee code and a password.
 export const loginSchema = z.object({
     employeeCode: z
         .string()
         .trim()
-        .refine(
-            (v) => /^\d{6}$/.test(v) || z.email().safeParse(v).success,
-            "Enter a 6-digit employee code or an email address",
-        ),
+        .regex(/^\d{6}$/, "Employee code must be a 6-digit number"),
     password: z.string().min(1, "Password is required"),
 });
 

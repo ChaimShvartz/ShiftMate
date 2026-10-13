@@ -13,8 +13,7 @@ const exact: Record<string, string> = {
         "אין לך הרשאה לבצע פעולה זו",
     Unauthorized: "אין לך הרשאה לבצע פעולה זו",
     Forbidden: "הגישה נדחתה עקב היעדר הרשאות",
-    "Enter a 6-digit employee code or an email address":
-        "יש להזין קוד עובד בן 6 ספרות או כתובת אימייל",
+    "Employee code must be a 6-digit number": "קוד העובד חייב להכיל 6 ספרות",
     "Password is required": "יש להזין סיסמה",
 
     // Users

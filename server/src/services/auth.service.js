@@ -37,11 +37,4 @@ export const authService = {
         };
     },
 
-    verifyToken(token) {
-        try {
-            return jwt.verify(token, JWT_SECRET);
-        } catch {
-            throwHttpError(401, "Invalid or expired token");
-        }
-    },
 };

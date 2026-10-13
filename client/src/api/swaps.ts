@@ -1,4 +1,4 @@
-import type { ComplianceResult, SwapRequest } from "../types";
+import type { SwapRequest } from "../types";
 import { apiClient } from "./api";
 
 export async function getBoard(): Promise<SwapRequest[]> {
@@ -47,10 +47,3 @@ export async function rejectApplicant(
     await apiClient.patch(`/swaps/${swapId}/applicants/${employeeCode}/reject`);
 }
 
-export async function getCompliance(
-    swapId: string,
-    employeeCode: string,
-): Promise<ComplianceResult> {
-    return (await apiClient.get(`/swaps/${swapId}/compliance/${employeeCode}`))
-        .data.data;
-}

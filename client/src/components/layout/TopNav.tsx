@@ -33,7 +33,7 @@ export default function TopNav() {
     return (
         <header className="topnav">
             <div className="topnav__inner">
-                <Link to="/" className="topnav__brand" aria-label="ShiftMate - דף הבית"><Logo height={34} /></Link>
+                <Link to="/" className="topnav__brand" aria-label="ShiftMate - דף הבית"><Logo height={50} /></Link>
 
                 <nav className="topnav__links" aria-label="ניווט ראשי">
                     {(NAV[user.role] ?? []).map(({ to, label }) => (

@@ -1,5 +1,5 @@
 import { ArrowRightLeft, Building2, Clock, Mail, Pencil, Phone, Trash2, UserPlus } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useUiStore } from "../../store/uiStore";
 import type { Unit, User } from "../../types";
 import { getRoleLabel } from "../../utils/formatters";
@@ -7,6 +7,7 @@ import { matches } from "../../utils/search";
 import { personClass } from "../../utils/person";
 import Avatar from "../ui/Avatar";
 import SearchInput from "../ui/SearchInput";
+import Select from "../ui/Select";
 
 interface UsersTableProps {
     users: User[];
@@ -25,8 +26,6 @@ const UsersTable = ({ users, units, filters, initialQuery = "", onFilterChange, 
 
     const rows = useMemo(() => users.filter((u) => matches(query, u.fullName, u.employeeCode, u.email, u.phone, u.unitName, getRoleLabel(u.role))), [users, query]);
 
-    const onSelect = (e: React.ChangeEvent<HTMLSelectElement>) => onFilterChange({ ...filters, [e.target.name]: e.target.value });
-
     const remove = async (u: User) => {
         const ok = await useUiStore.getState().confirm({ title: "מחיקת עובד", message: `${u.fullName} (#${u.employeeCode}) יימחק לצמיתות. אי אפשר למחוק עובד שעדיין משובץ למשמרות.`, confirmLabel: "מחק עובד", danger: true });
         if (ok) await onDeleteUser(u.employeeCode, u.fullName);
@@ -36,16 +35,8 @@ const UsersTable = ({ users, units, filters, initialQuery = "", onFilterChange, 
         <section>
             <div className="toolbar">
                 <SearchInput label="חיפוש משתמשים" placeholder="שם, קוד, אימייל, טלפון או יחידה" value={query} onChange={setQuery} />
-                <select name="unitName" aria-label="סינון לפי יחידה" value={filters.unitName} onChange={onSelect}>
-                    <option value="">כל היחידות</option>
-                    {units.map((u) => <option key={u.name} value={u.name}>{u.name}</option>)}
-                </select>
-                <select name="role" aria-label="סינון לפי תפקיד" value={filters.role} onChange={onSelect}>
-                    <option value="">כל התפקידים</option>
-                    <option value="admin">מנהל ראשי</option>
-                    <option value="manager">מנהל יחידה</option>
-                    <option value="employee">עובד</option>
-                </select>
+                <Select ariaLabel="סינון לפי יחידה" className="select__trigger--pill" value={filters.unitName} onValueChange={(v) => onFilterChange({ ...filters, unitName: v })} options={[{ value: "", label: "כל היחידות" }, ...units.map((u) => ({ value: u.name, label: u.name }))]} />
+                <Select ariaLabel="סינון לפי תפקיד" className="select__trigger--pill" value={filters.role} onValueChange={(v) => onFilterChange({ ...filters, role: v })} options={[{ value: "", label: "כל התפקידים" }, { value: "admin", label: "מנהל ראשי" }, { value: "manager", label: "מנהל יחידה" }, { value: "employee", label: "עובד" }]} />
                 {(filters.unitName || filters.role || query) && (
                     <button type="button" className="btn-clear-filters" onClick={() => { onFilterChange({ unitName: "", role: "" }); setQuery(""); }}>נקה סינון</button>
                 )}

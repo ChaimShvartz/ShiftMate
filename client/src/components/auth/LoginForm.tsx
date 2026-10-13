@@ -24,7 +24,7 @@ const LoginForm = ({
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [name]: value,
+            [name]: name === "employeeCode" ? value.replace(/\D/g, "").slice(0, 6) : value,
         }));
     };
 
@@ -44,17 +44,19 @@ const LoginForm = ({
                 <label htmlFor="employeeCode">
                     <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                         <User size={13} style={{ opacity: 0.7 }} />
-                        <span>קוד עובד או אימייל</span>
+                        <span>קוד עובד</span>
                     </span>
                 </label>
                 <input
                     id="employeeCode"
                     name="employeeCode"
                     type="text"
+                    inputMode="numeric"
+                    maxLength={6}
                     required
                     autoComplete="username"
                     dir="ltr"
-                    placeholder="לדוגמה: 123456"
+                    placeholder="123456"
                     value={formData.employeeCode}
                     onChange={handleChange}
                 />

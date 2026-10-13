@@ -1,3 +1,5 @@
+import Select from "../ui/Select";
+import CopyCodeButton from "../ui/CopyCodeButton";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -156,6 +158,7 @@ const UserFormModal = ({
                                 <strong className="code-value">
                                     #{status.createdUser.employeeCode}
                                 </strong>
+                                <CopyCodeButton code={status.createdUser.employeeCode} />
                             </div>
                             <p className="code-note">
                                 מסור קוד זה לעובד לצורך התחברותו הראשונית.
@@ -172,20 +175,14 @@ const UserFormModal = ({
                         <form onSubmit={handleSubmit} className="modal-form">
                             <div className="form-group">
                                 <label htmlFor="userRole">תפקיד המשתמש</label>
-                                <select
+                                <Select
                                     id="userRole"
                                     name="role"
-                                    value={formData.role}
-                                    onChange={handleChange}
                                     required
-                                >
-                                    <option value="employee">
-                                        עובד (משובץ למשמרות)
-                                    </option>
-                                    <option value="manager">
-                                        מנהל יחידה (אחראי משמרות)
-                                    </option>
-                                </select>
+                                    value={formData.role}
+                                    onValueChange={(v) => setFormData((prev) => ({ ...prev, role: v as Role }))}
+                                    options={[{ value: "employee", label: "עובד (משובץ למשמרות)" }, { value: "manager", label: "מנהל יחידה (אחראי משמרות)" }]}
+                                />
                             </div>
 
                             <div className="form-group">
@@ -237,20 +234,15 @@ const UserFormModal = ({
                                         ? "יחידה לניהול *"
                                         : "יחידה משויכת *"}
                                 </label>
-                                <select
+                                <Select
                                     id="userUnit"
                                     name="unitName"
-                                    value={formData.unitName}
-                                    onChange={handleChange}
                                     required
-                                >
-                                    <option value="">בחר יחידה...</option>
-                                    {units.map((u) => (
-                                        <option key={u.name} value={u.name}>
-                                            {u.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    value={formData.unitName}
+                                    placeholder="בחר יחידה"
+                                    onValueChange={(v) => setFormData((prev) => ({ ...prev, unitName: v }))}
+                                    options={units.map((u) => ({ value: u.name, label: u.name }))}
+                                />
                             </div>
 
                             <div className="form-group">

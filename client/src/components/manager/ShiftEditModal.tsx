@@ -1,3 +1,4 @@
+import Select from "../ui/Select";
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Edit2, Clock, User, Save } from "lucide-react";
@@ -150,23 +151,15 @@ const ShiftEditModal = ({
                                     <span>עובד משובץ</span>
                                 </span>
                             </label>
-                            <select
+                            <Select
                                 id="assignedEmployee"
                                 name="assignedEmployeeCode"
-                                value={formData.assignedEmployeeCode}
-                                onChange={handleChange}
                                 required
-                            >
-                                <option value="">בחר עובד מהיחידה...</option>
-                                {employees.map((emp) => (
-                                    <option
-                                        key={emp.employeeCode}
-                                        value={emp.employeeCode}
-                                    >
-                                        {emp.fullName} (#{emp.employeeCode})
-                                    </option>
-                                ))}
-                            </select>
+                                value={formData.assignedEmployeeCode}
+                                placeholder="בחר עובד מהיחידה"
+                                onValueChange={(v) => setFormData((prev) => ({ ...prev, assignedEmployeeCode: v }))}
+                                options={employees.map((emp) => ({ value: emp.employeeCode, label: `${emp.fullName} (#${emp.employeeCode})` }))}
+                            />
                         </div>
 
                         <div className="form-row">

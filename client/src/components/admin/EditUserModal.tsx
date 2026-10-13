@@ -1,3 +1,4 @@
+import Select from "../ui/Select";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -242,20 +243,15 @@ const EditUserModal = ({
                                         ? "יחידה מנוהלת *"
                                         : "שיוך יחידה *"}
                                 </label>
-                                <select
+                                <Select
                                     id="editUnit"
                                     name="unitName"
-                                    value={formData.unitName}
-                                    onChange={handleChange}
                                     required
-                                >
-                                    <option value="">בחר יחידה...</option>
-                                    {units.map((u) => (
-                                        <option key={u.name} value={u.name}>
-                                            {u.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    value={formData.unitName}
+                                    placeholder="בחר יחידה"
+                                    onValueChange={(v) => setFormData((prev) => ({ ...prev, unitName: v }))}
+                                    options={units.map((u) => ({ value: u.name, label: u.name }))}
+                                />
                             </div>
                         )}
 

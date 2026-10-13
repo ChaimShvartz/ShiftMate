@@ -1,11 +1,11 @@
 import { useId } from "react";
 
 // ShiftMate mark: a clock face with two opposing swap arrows. Spins on hover.
-export function LogoMark({ size = 34 }: { size?: number }) {
+export function LogoMark({ size = 34, spin = false }: { size?: number; spin?: boolean }) {
     const gid = useId();
     const ticks = Array.from({ length: 12 }, (_, i) => i * 30);
     return (
-        <svg className="logo-mark" width={size} height={size} viewBox="0 0 100 100" role="img" aria-label="ShiftMate">
+        <svg className={`logo-mark ${spin ? "logo-mark--spin" : ""}`} width={size} height={size} viewBox="0 0 100 100" role="img" aria-label="ShiftMate">
             <defs>
                 <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stopColor="var(--brand-hover)" />

@@ -87,7 +87,9 @@ export const swapsService = {
         if (swapDoc.requesterEmployeeCode === user.employeeCode) {
             throwHttpError(400, "Cannot apply for your own swap request");
         }
-        if (swapDoc.applicants.some((a) => a.employeeCode === user.employeeCode)) {
+        if (
+            swapDoc.applicants.some((a) => a.employeeCode === user.employeeCode)
+        ) {
             throwHttpError(
                 400,
                 "You have already applied for this swap request",
@@ -147,7 +149,8 @@ export const swapsService = {
         }
         if (
             !swapDoc.applicants.some(
-                (a) => a.employeeCode === applicantCode && a.status === "pending",
+                (a) =>
+                    a.employeeCode === applicantCode && a.status === "pending",
             )
         ) {
             throwHttpError(404, "Applicant not found or already processed");
@@ -175,7 +178,12 @@ export const swapsService = {
     },
 
     // viewer: { employeeCode, role } - employees only see their own application.
-    enrichSwaps(swaps, usersMap, weeksMap, { viewer, withCompliance = false } = {}) {
+    enrichSwaps(
+        swaps,
+        usersMap,
+        weeksMap,
+        { viewer, withCompliance = false } = {},
+    ) {
         const nameOf = (code) => usersMap[code]?.full_name || code;
         const isManager = viewer?.role === "manager";
 
@@ -185,7 +193,9 @@ export const swapsService = {
                 weekDoc?.shifts.find((s) => s.id === swap.shiftId) ?? null;
 
             const applicants = swap.applicants
-                .filter((a) => isManager || a.employeeCode === viewer?.employeeCode)
+                .filter(
+                    (a) => isManager || a.employeeCode === viewer?.employeeCode,
+                )
                 .map((a) => ({
                     ...a,
                     employeeName: nameOf(a.employeeCode),
@@ -201,12 +211,22 @@ export const swapsService = {
                         : {}),
                 }));
 
-            const approved = swap.applicants.find((a) => a.status === "approved");
+            const approved = swap.applicants.find(
+                (a) => a.status === "approved",
+            );
+
+            // Only the manager and the requester see the reason; colleagues do not.
+            const canSeeReason =
+                isManager ||
+                swap.requesterEmployeeCode === viewer?.employeeCode;
 
             return {
                 ...swap,
+                reason: canSeeReason ? swap.reason : undefined,
                 requesterName: nameOf(swap.requesterEmployeeCode),
-                replacementName: approved ? nameOf(approved.employeeCode) : null,
+                replacementName: approved
+                    ? nameOf(approved.employeeCode)
+                    : null,
                 shiftDetails,
                 applicants,
                 applicantsCount: swap.applicants.length,

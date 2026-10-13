@@ -81,7 +81,7 @@ export default function SwapBoardPage() {
         mine.filter((s) => s.requesterEmployeeCode === me).forEach((s) => byId.set(s._id, s));
         return [...byId.values()]
             .filter((s) => (filter === "open" ? s.requesterEmployeeCode !== me && s.status === "published_to_board" : filter === "mine" ? s.requesterEmployeeCode === me : true))
-            .filter((s) => matches(q, s.requesterName, s.reason, s.shiftDetails?.title))
+            .filter((s) => matches(q, s.requesterName, s.requesterEmployeeCode === me ? s.reason : "", s.shiftDetails?.title))
             .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     }, [board, mine, user, filter, q]);
 
@@ -108,7 +108,7 @@ export default function SwapBoardPage() {
                     <p className="page__subtitle">כאן עמיתים ביחידה מחפשים מחליף. כשמשמרת מתאימה לך, לחץ עליה והמנהל יאשר.</p>
                 </div>
                 <div className="page-actions">
-                    <SearchInput label="חיפוש בבורסה" placeholder="חיפוש לפי עובד או סיבה" value={q} onChange={setQ} />
+                    <SearchInput label="חיפוש בבורסה" placeholder="חיפוש לפי עובד" value={q} onChange={setQ} />
                     <div className="filters" role="tablist" aria-label="סינון">
                         {FILTERS.map(([key, label]) => (
                             <button key={key} type="button" role="tab" aria-selected={filter === key} className={filter === key ? "is-active" : ""} onClick={() => setFilter(key)}>
@@ -151,7 +151,7 @@ export default function SwapBoardPage() {
                                             <strong>{me ? "הבקשה שלך" : s.requesterName}</strong>
                                             <small>{timeAgo(s.createdAt)}</small>
                                         </div>
-                                        <p className="msg__text">{s.reason ? `“${s.reason}”` : me ? "ביקשת להחליף משמרת" : "מחפש/ת מחליף/ה למשמרת"}</p>
+                                        <p className="msg__text">{me ? (s.reason ? `“${s.reason}”` : "ביקשת להחליף משמרת") : "מחפש/ת מחליף/ה למשמרת הבאה"}</p>
                                         {sh && (
                                             <div className="msg__shift">
                                                 <b>{fmtTimeRange(sh.startTime, sh.endTime)}</b>

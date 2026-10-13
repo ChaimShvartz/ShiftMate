@@ -1,3 +1,4 @@
+import CopyCodeButton from "../ui/CopyCodeButton";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -147,6 +148,7 @@ const ReplaceManagerModal = ({
                                 <strong className="code-value">
                                     #{status.newManager.employeeCode}
                                 </strong>
+                                <CopyCodeButton code={status.newManager.employeeCode} />
                             </div>
                             <button
                                 type="button"
