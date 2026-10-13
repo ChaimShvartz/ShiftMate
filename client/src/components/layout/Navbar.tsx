@@ -1,18 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
-
-const getRoleLabel = (role?: string) => {
-    switch (role) {
-        case "admin":
-            return "מנהל ראשי";
-        case "manager":
-            return "מנהל יחידה";
-        case "employee":
-            return "עובד";
-        default:
-            return role || "";
-    }
-};
+import { getRoleLabel } from "../../utils/formatters";
 
 const getNavLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "nav-link active" : "nav-link";

@@ -1,17 +1,5 @@
 import { useAuthStore } from "../../store/authStore";
-
-const getRoleLabel = (role?: string) => {
-    switch (role) {
-        case "admin":
-            return "מנהל ראשי";
-        case "manager":
-            return "מנהל יחידה";
-        case "employee":
-            return "עובד";
-        default:
-            return role || "";
-    }
-};
+import { getRoleLabel } from "../../utils/formatters";
 
 const Footer = () => {
     const user = useAuthStore((state) => state.user);
