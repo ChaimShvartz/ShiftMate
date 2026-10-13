@@ -452,7 +452,7 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .modal-actions .btn-submit, .modal-actions .btn-cancel, .modal-actions .btn-danger { width: auto; flex: 0 0 auto; }
 .rule-notice-box, .role-notice-card, .current-manager-banner, .template-download-section, .selected-file-info { padding: 14px 16px; border-radius: var(--r-ctl); background: var(--brand-soft); color: var(--brand-text); margin-bottom: 14px; font-size: 14px; }
 .template-download-section { background: var(--surface-2); color: var(--ink-2); display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
-.selected-file-info { background: var(--ok-soft); color: var(--ok-text); }
+.selected-file-info { background: var(--surface-2); color: var(--ink-2); }
 .modal-success-content { text-align: center; padding: 6px 0; }
 .code-box, .admin-code-card { background: var(--surface-2); border-radius: var(--r-box); padding: 18px; margin: 14px 0; text-align: center; }
 .code-label { color: var(--ink-3); font-size: 13px; }

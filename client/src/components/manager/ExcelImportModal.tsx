@@ -212,7 +212,7 @@ const ExcelImportModal = ({
                         {state.file && (
                             <div className="selected-file-info">
                                 <span>
-                                    קובץ שנבחר: <strong>{state.file.name}</strong>
+                                    קובץ שנבחר: <strong><bdi dir="ltr">{state.file.name}</bdi></strong>
                                 </span>
                             </div>
                         )}
