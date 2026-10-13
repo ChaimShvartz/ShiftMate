@@ -668,3 +668,8 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 }
 .profile-theme { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-radius: var(--r-box); background: var(--surface-2); font-size: 14px; color: var(--ink-2); }
 
+
+/* One focal point: logo watermark, rings and swap button share the same centre. */
+.scene__mark { position: absolute; left: 50%; top: 50%; width: 440px; height: 440px; margin: -220px 0 0 -220px; opacity: 0.09; animation: slow-spin 80s linear infinite; pointer-events: none; }
+.scene__mark svg { width: 440px; height: 440px; --logo-ink: #fff; --brand: #fff; --brand-hover: #fff; }
+@media (min-width: 1101px) { .login-board .login-board__mark { display: none; } }

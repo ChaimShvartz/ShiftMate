@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowLeftRight, Check } from "lucide-react";
+import { LogoMark } from "../brand/Logo";
 
 const float = (delay: number, dist: number) => ({
     animate: { y: [0, -dist, 0] },
@@ -16,6 +17,7 @@ const ROWS: [string, string, string][] = [
 export default function LoginScene() {
     return (
         <div className="scene" aria-hidden>
+            <span className="scene__mark"><LogoMark size={440} /></span>
             <span className="scene__ring scene__ring--1" />
             <span className="scene__ring scene__ring--2" />
             <span className="scene__ring scene__ring--3" />
