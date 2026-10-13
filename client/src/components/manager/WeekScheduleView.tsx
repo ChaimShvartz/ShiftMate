@@ -1,9 +1,9 @@
 import type React from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useMemo } from "react";
 import { useUiStore } from "../../store/uiStore";
 import type { Shift, ShiftWeek, User } from "../../types";
-import { dayKey, fmtDayMonth, fmtTimeRange, fmtWeekday, isToday, nowFloating } from "../../utils/datetime";
+import { dayKey, fmtDayMonth, fmtTimeRange, fmtWeekday, isToday } from "../../utils/datetime";
 import { personClass } from "../../utils/person";
 import { matches } from "../../utils/search";
 import Avatar from "../ui/Avatar";
@@ -14,11 +14,10 @@ interface Props {
     query: string;
     onEditShift: (shift: Shift) => void;
     onDeleteShift: (shiftId: number) => Promise<void>;
-    onAddShift: (employeeCode: string, date: string) => void;
 }
 
 // People × days. Each cell lists that person's shifts for that day.
-export default function WeekScheduleView({ week, employees, query, onEditShift, onDeleteShift, onAddShift }: Props) {
+export default function WeekScheduleView({ week, employees, query, onEditShift, onDeleteShift }: Props) {
     const shifts = useMemo(() => week?.shifts ?? [], [week]);
 
     // Always the full Sunday-Saturday week, so a shift can be added on an empty day.
@@ -28,7 +27,6 @@ export default function WeekScheduleView({ week, employees, query, onEditShift, 
         const sunday = Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate()) - a.getUTCDay() * 864e5;
         return Array.from({ length: 7 }, (_, i) => new Date(sunday + i * 864e5).toISOString().slice(0, 10));
     }, [week]);
-    const today = nowFloating().toISOString().slice(0, 10);
 
     const rows = useMemo(() => {
         const known = new Set(employees.map((e) => e.employeeCode));
@@ -81,11 +79,6 @@ export default function WeekScheduleView({ week, employees, query, onEditShift, 
                                         <button type="button" aria-label="מחק משמרת" className="btn-close" style={{ position: "absolute", insetBlockStart: 2, insetInlineEnd: 2, width: 22, height: 22 }} onClick={() => void remove(s, e.fullName)}><Trash2 size={12} /></button>
                                     </div>
                                 ))}
-                                {d >= today && (
-                                    <button type="button" className="roster__add" aria-label={`הוסף משמרת ל${e.fullName}`} title="הוסף משמרת" onClick={() => onAddShift(e.employeeCode, d)}>
-                                        <Plus size={14} />
-                                    </button>
-                                )}
                             </div>
                         ))}
                     </div>

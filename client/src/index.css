@@ -668,7 +668,3 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 }
 .profile-theme { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-radius: var(--r-box); background: var(--surface-2); font-size: 14px; color: var(--ink-2); }
 
-.roster__add { align-self: flex-start; display: grid; place-items: center; width: 100%; min-height: 26px; border-radius: 10px; color: var(--ink-3); opacity: 0; border: 1.5px dashed var(--line-strong); transition: opacity 0.15s, color 0.15s, border-color 0.15s; }
-.roster__cell:hover .roster__add, .roster__add:focus-visible { opacity: 1; }
-.roster__add:hover { color: var(--brand-text); border-color: var(--brand); }
-@media (hover: none) { .roster__add { opacity: 0.55; min-height: 24px; } }

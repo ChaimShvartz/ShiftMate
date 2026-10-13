@@ -165,7 +165,6 @@ const SchedulePage = () => {
                     query={query}
                     onEditShift={(shift) => setState((prev) => ({ ...prev, editingShift: shift }))}
                     onDeleteShift={handleDeleteShift}
-                    onAddShift={(employeeCode, date) => setState((prev) => ({ ...prev, creating: { employeeCode, date } }))}
                 />
             )}
 
