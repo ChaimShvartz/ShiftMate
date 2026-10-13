@@ -40,8 +40,13 @@ const SetupForm = ({ onSubmit, loading, error }: SetupFormProps) => {
     return (
         <div className="setup-form-container" dir="rtl">
             <header className="setup-header">
-                <h1>הקמת מערכת ShiftMate</h1>
-                <p>יצירת מנהל ראשי</p>
+                <img
+                    src="/logo-horizontal.png"
+                    alt="ShiftMate"
+                    className="setup-logo-img"
+                />
+                <h2>הקמת מערכת ראשונית</h2>
+                <p>יצירת חשבון מנהל ראשי למערכת</p>
             </header>
 
             {error && <div className="error-message">{error}</div>}

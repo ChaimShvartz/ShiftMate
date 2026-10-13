@@ -7,10 +7,17 @@ const Footer = () => {
     return (
         <footer className="app-footer">
             <div className="footer-content">
-                <p className="footer-copyright">
-                    © {new Date().getFullYear()} ShiftMate — מערכת ניהול ובורסת
-                    משמרות חכמה
-                </p>
+                <div className="footer-brand">
+                    <img
+                        src="/logo-icon.png"
+                        alt="ShiftMate"
+                        className="footer-logo-icon"
+                    />
+                    <p className="footer-copyright">
+                        © {new Date().getFullYear()} ShiftMate — מערכת ניהול ובורסת
+                        משמרות חכמה
+                    </p>
+                </div>
                 {user && (
                     <p className="footer-status">
                         מחובר כ-<strong>{user.fullName}</strong> (

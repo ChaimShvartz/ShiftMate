@@ -4,7 +4,11 @@ const NotFoundPage = () => {
     return (
         <main className="not-found-page" dir="rtl">
             <div className="not-found-card">
-                <span className="not-found-icon">🔍</span>
+                <img
+                    src="/logo-icon.png"
+                    alt="ShiftMate"
+                    className="not-found-logo-icon"
+                />
                 <h1 className="not-found-code">404</h1>
                 <h2 className="not-found-title">העמוד לא נמצא</h2>
                 <p className="not-found-desc">

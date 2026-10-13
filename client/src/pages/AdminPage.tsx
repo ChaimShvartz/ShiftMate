@@ -187,6 +187,34 @@ const AdminPage = () => {
                 </div>
             </header>
 
+            <section className="admin-stats-grid" aria-label="נתוני מערכת">
+                <div className="admin-stat-card">
+                    <div className="admin-stat-icon admin-stat-icon--units">🏢</div>
+                    <div className="admin-stat-info">
+                        <span className="admin-stat-value">{state.units.length}</span>
+                        <span className="admin-stat-label">יחידות פעילות</span>
+                    </div>
+                </div>
+                <div className="admin-stat-card">
+                    <div className="admin-stat-icon admin-stat-icon--managers">👔</div>
+                    <div className="admin-stat-info">
+                        <span className="admin-stat-value">
+                            {state.users.filter((u) => u.role === "manager").length}
+                        </span>
+                        <span className="admin-stat-label">מנהלי יחידות</span>
+                    </div>
+                </div>
+                <div className="admin-stat-card">
+                    <div className="admin-stat-icon admin-stat-icon--employees">👥</div>
+                    <div className="admin-stat-info">
+                        <span className="admin-stat-value">
+                            {state.users.filter((u) => u.role === "employee").length}
+                        </span>
+                        <span className="admin-stat-label">עובדים משובצים</span>
+                    </div>
+                </div>
+            </section>
+
             {state.feedback && (
                 <div className="feedback-banner">
                     <span>{state.feedback}</span>

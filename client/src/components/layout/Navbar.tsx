@@ -18,9 +18,12 @@ const Navbar = () => {
     return (
         <header className="app-header">
             <div className="header-brand">
-                <Link to="/" className="brand-logo">
-                    <span className="brand-icon">⏱️</span>
-                    <span className="brand-name">ShiftMate</span>
+                <Link to="/" className="brand-logo" title="ShiftMate">
+                    <img
+                        src="/logo-horizontal.png"
+                        alt="ShiftMate"
+                        className="brand-logo-img"
+                    />
                 </Link>
 
                 {user && (

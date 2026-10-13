@@ -77,10 +77,18 @@ const LoginPage = () => {
 
     return (
         <main className="login-page" dir="rtl">
+            <div className="login-bg-glow login-bg-glow--1" />
+            <div className="login-bg-glow login-bg-glow--2" />
             <div className="login-card">
                 <header className="login-header">
-                    <h1>⏱️ ShiftMate</h1>
-                    <p>התחברות למערכת ניהול המשמרות</p>
+                    <img
+                        src="/logo-horizontal.png"
+                        alt="ShiftMate"
+                        className="login-logo-img"
+                    />
+                    <p className="login-subtitle">
+                        מערכת חכמה לניהול משמרות, עובדים וחילופים
+                    </p>
                 </header>
 
                 {state.isSystemInitialized === false && (
