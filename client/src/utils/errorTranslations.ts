@@ -65,6 +65,9 @@ const exact: Record<string, string> = {
     "Week not found": "שבוע המשמרות לא נמצא",
     "Shift week not found": "שבוע המשמרות לא נמצא",
     "End time must be after start time": "שעת הסיום חייבת להיות אחרי שעת ההתחלה",
+    "Shift must be within the week of the schedule": "המשמרת חייבת להיות בתוך השבוע של הלוח",
+    "Cannot add a shift in the past": "אי אפשר להוסיף משמרת שכבר התחילה או עברה",
+    "Labor rules warning": "ההוספה חורגת מחוקי העבודה של העובד",
     "Shift end time must be after start time":
         "שעת הסיום חייבת להיות אחרי שעת ההתחלה",
     "Employee does not belong to this unit": "העובד אינו משויך ליחידה זו",

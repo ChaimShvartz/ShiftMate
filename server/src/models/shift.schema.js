@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+export const createShiftSchema = z.object({
+    assignedEmployeeCode: z
+        .string()
+        .regex(/^\d{6}$/, "Employee code must be a 6-digit number"),
+    title: z.string().trim().max(80).default(""),
+    startTime: z.coerce.date(),
+    endTime: z.coerce.date(),
+    // The manager confirmed a labor-rule warning (rest / weekly hours).
+    force: z.boolean().optional().default(false),
+});
+
 export const updateShiftSchema = z.object({
     title: z.string().trim().optional(),
     assignedEmployeeCode: z

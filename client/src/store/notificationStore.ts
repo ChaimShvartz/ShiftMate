@@ -19,7 +19,7 @@ interface NotificationState {
     clearAll: () => Promise<void>;
 }
 
-const SHIFT_TYPES = new Set(["import_completed", "shift_updated", "shift_deleted"]);
+const SHIFT_TYPES = new Set(["import_completed", "shift_updated", "shift_deleted", "shift_added"]);
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
     items: [],

@@ -1,11 +1,12 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Upload } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { deleteShift, getShifts, updateShift } from "../api/shifts";
 import { getAllUsers } from "../api/users";
 import SearchInput from "../components/ui/SearchInput";
 import ExcelImportModal from "../components/manager/ExcelImportModal";
+import ShiftCreateModal from "../components/manager/ShiftCreateModal";
 import ShiftEditModal from "../components/manager/ShiftEditModal";
 import WeekScheduleView from "../components/manager/WeekScheduleView";
 import { useNotificationStore } from "../store/notificationStore";
@@ -20,6 +21,7 @@ interface SchedulePageState {
     feedback: string | null;
     isImportModalOpen: boolean;
     editingShift: Shift | null;
+    creating: { employeeCode?: string; date?: string } | null;
 }
 
 const SchedulePage = () => {
@@ -33,6 +35,7 @@ const SchedulePage = () => {
         feedback: null,
         isImportModalOpen: false,
         editingShift: null,
+        creating: null,
     });
 
     const loadData = async (weekNumber?: number) => {
@@ -125,6 +128,12 @@ const SchedulePage = () => {
                 </div>
                 <div className="page-actions">
                     <SearchInput label="חיפוש בלוח" placeholder="חיפוש עובד או משמרת" value={query} onChange={setQuery} />
+                    {state.week && state.week.weekNumber && (
+                        <button type="button" className="btn btn--ghost" onClick={() => setState((prev) => ({ ...prev, creating: {} }))}>
+                            <Plus size={16} />
+                            הוסף משמרת
+                        </button>
+                    )}
                     <button type="button" className="btn btn--primary" onClick={() => setState((prev) => ({ ...prev, isImportModalOpen: true }))}>
                         <Upload size={16} />
                         העלאת לוח (Excel)
@@ -156,10 +165,25 @@ const SchedulePage = () => {
                     query={query}
                     onEditShift={(shift) => setState((prev) => ({ ...prev, editingShift: shift }))}
                     onDeleteShift={handleDeleteShift}
+                    onAddShift={(employeeCode, date) => setState((prev) => ({ ...prev, creating: { employeeCode, date } }))}
                 />
             )}
 
             <ExcelImportModal isOpen={state.isImportModalOpen} onClose={() => setState((prev) => ({ ...prev, isImportModalOpen: false }))} onImportSuccess={handleImportSuccess} />
+
+            {state.creating && state.week && state.week.weekNumber && (
+                <ShiftCreateModal
+                    open
+                    week={state.week}
+                    employees={state.employees}
+                    prefill={state.creating}
+                    onClose={() => setState((prev) => ({ ...prev, creating: null }))}
+                    onCreated={() => {
+                        setState((prev) => ({ ...prev, feedback: "המשמרת נוספה ללוח והעובד קיבל התראה." }));
+                        void loadData(state.week?.weekNumber);
+                    }}
+                />
+            )}
 
             <ShiftEditModal
                 isOpen={Boolean(state.editingShift)}

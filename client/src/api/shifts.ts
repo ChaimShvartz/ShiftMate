@@ -12,6 +12,19 @@ export async function getShifts(
     return res.data.data;
 }
 
+export interface CreateShiftBody {
+    assignedEmployeeCode: string;
+    title?: string;
+    startTime: string;
+    endTime: string;
+    force?: boolean;
+}
+
+export async function createShift(weekNumber: number, body: CreateShiftBody): Promise<Shift> {
+    const res = await apiClient.post(`/shifts/${weekNumber}`, body);
+    return res.data.data;
+}
+
 export async function updateShift(
     weekNumber: number,
     shiftId: number,
