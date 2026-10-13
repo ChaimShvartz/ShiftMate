@@ -1,0 +1,21 @@
+import { Link } from "react-router-dom";
+
+const NotFoundPage = () => {
+    return (
+        <main className="not-found-page" dir="rtl">
+            <div className="not-found-card">
+                <span className="not-found-icon">🔍</span>
+                <h1 className="not-found-code">404</h1>
+                <h2 className="not-found-title">העמוד לא נמצא</h2>
+                <p className="not-found-desc">
+                    הכתובת שחיפשת אינה קיימת או שהועברה למיקום אחר.
+                </p>
+                <Link to="/" className="btn-primary">
+                    חזרה לדף הראשי
+                </Link>
+            </div>
+        </main>
+    );
+};
+
+export default NotFoundPage;
