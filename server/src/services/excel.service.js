@@ -15,12 +15,21 @@ export const excelService = {
             views: [{ rightToLeft: true, state: "frozen", ySplit: 1 }],
         });
 
-        const widths = [30, 18, 18, 18, 30];
+        const widths = [30, 18, 18, 18, 32];
         sheet.columns = HEADERS.map((header, i) => ({
             header,
             width: widths[i],
         }));
-        sheet.getRow(1).font = { bold: true };
+
+        // Header Row (Row 1)
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        headerRow.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF2563EB" },
+        };
+        headerRow.height = 28;
 
         const listSheet = workbook.addWorksheet(EMPLOYEES_SHEET, {
             state: "hidden",
@@ -31,7 +40,36 @@ export const excelService = {
         });
         const listRange = `${EMPLOYEES_SHEET}!$A$1:$A$${Math.max(employees.length, 1)}`;
 
-        for (let r = 2; r <= MAX_ROWS + 1; r++) {
+        // Example Row (Row 2) - Non-editable sample format
+        const exampleEmp =
+            employees.length > 0
+                ? `${employees[0].full_name} – ${employees[0].employee_code}`
+                : "ישראל ישראלי – 101002";
+
+        const exampleRow = sheet.getRow(2);
+        exampleRow.values = [
+            exampleEmp,
+            "2026-10-18",
+            "08:00",
+            "16:00",
+            "משמרת בוקר (דוגמה - שורה נעולה)",
+        ];
+        exampleRow.font = { italic: true, color: { argb: "FF475569" } };
+        exampleRow.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFF1F5F9" },
+        };
+        exampleRow.height = 24;
+
+        // Lock row 1 and row 2
+        for (let c = 1; c <= HEADERS.length; c++) {
+            sheet.getCell(1, c).protection = { locked: true };
+            sheet.getCell(2, c).protection = { locked: true };
+        }
+
+        // Editable data rows (Row 3+)
+        for (let r = 3; r <= MAX_ROWS + 2; r++) {
             sheet.getCell(r, 1).dataValidation = {
                 type: "list",
                 allowBlank: true,
@@ -43,11 +81,16 @@ export const excelService = {
             sheet.getCell(r, 2).numFmt = "yyyy-mm-dd";
             sheet.getCell(r, 3).numFmt = "@";
             sheet.getCell(r, 4).numFmt = "@";
+
+            for (let c = 1; c <= HEADERS.length; c++) {
+                sheet.getCell(r, c).protection = { locked: false };
+            }
         }
 
-        const thin = { style: "thin", color: { argb: "FF808080" } };
-        for (let r = 1; r <= MAX_ROWS + 1; r++) {
-            sheet.getRow(r).height = 24;
+        const thin = { style: "thin", color: { argb: "FFCBD5E1" } };
+        for (let r = 1; r <= MAX_ROWS + 2; r++) {
+            const row = sheet.getRow(r);
+            if (r > 2) row.height = 24;
             for (let c = 1; c <= sheet.columns.length; c++) {
                 const cell = sheet.getCell(r, c);
                 cell.border = {
@@ -59,6 +102,11 @@ export const excelService = {
                 cell.alignment = { vertical: "middle", horizontal: "center" };
             }
         }
+
+        await sheet.protect("", {
+            selectLockedCells: true,
+            selectUnlockedCells: true,
+        });
 
         return workbook.xlsx.writeBuffer();
     },
@@ -92,10 +140,26 @@ export const excelService = {
             );
             if (values.every((v) => v === "")) continue;
             const [employee, date, start, end, title] = values;
+
+            // Skip example row if present
+            const isExampleRow =
+                r === 2 &&
+                (String(title).includes("דוגמה") ||
+                    String(title).includes("example") ||
+                    String(title).includes("שורה נעולה"));
+
+            if (isExampleRow) {
+                continue;
+            }
+
             rows.push({ rowNumber: r, employee, date, start, end, title });
         }
 
-        if (!rows.length) throwHttpError(400, "File is empty");
+        if (!rows.length)
+            throwHttpError(
+                400,
+                "File is empty or contains only the example row",
+            );
         return rows;
     },
 
