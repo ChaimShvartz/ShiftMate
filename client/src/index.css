@@ -593,9 +593,10 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 
 /* ---------- login scene ---------- */
 .scene { position: relative; flex: 1; min-height: 300px; display: grid; place-items: center; }
-.scene__ring { position: absolute; border-radius: 50%; border: 1.5px dashed rgba(255, 255, 255, 0.22); inset: 50% auto auto 50%; transform: translate(-50%, -50%); }
-.scene__ring--1 { width: 340px; height: 340px; }
-.scene__ring--2 { width: 480px; height: 480px; border-style: solid; border-color: rgba(255, 255, 255, 0.1); }
+.scene__ring { position: absolute; left: 50%; top: 50%; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, 0.14); transform: translate(-50%, -50%); }
+.scene__ring--1 { width: 210px; height: 210px; }
+.scene__ring--2 { width: 340px; height: 340px; }
+.scene__ring--3 { width: 470px; height: 470px; }
 .scene__card { position: absolute; background: #fff; color: var(--ink); border-radius: 22px; box-shadow: 0 24px 50px rgba(5, 10, 40, 0.35); padding: 16px 18px; }
 :root[data-theme="dark"] .scene__card { background: #23272f; color: var(--ink); }
 .scene__card--week { width: 300px; inset-inline-end: 8%; top: 8%; display: flex; flex-direction: column; gap: 8px; }
@@ -619,7 +620,7 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .scene__btn { display: block; text-align: center; padding: 9px; border-radius: 999px; background: var(--brand); color: var(--brand-ink); font-weight: 600; font-size: 13px; }
 .scene__badge { position: absolute; inset-inline-start: 18%; top: 4%; }
 .scene__badge span { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: var(--ok); color: #fff; font-weight: 600; font-size: 13px; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3); }
-.scene__swap { position: absolute; inset-inline-end: 42%; bottom: 30%; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35); }
+.scene__swap { position: absolute; left: 50%; top: 50%; margin: -26px 0 0 -26px; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35); z-index: 2; }
 
 /* ---------- login: short screens, tablet, mobile ---------- */
 @media (max-height: 780px) and (min-width: 1101px) {

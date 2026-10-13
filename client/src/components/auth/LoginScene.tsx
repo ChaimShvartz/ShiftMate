@@ -18,6 +18,7 @@ export default function LoginScene() {
         <div className="scene" aria-hidden>
             <span className="scene__ring scene__ring--1" />
             <span className="scene__ring scene__ring--2" />
+            <span className="scene__ring scene__ring--3" />
 
             <motion.div className="scene__card scene__card--week" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 160, damping: 22, delay: 0.2 }}>
                 <header><b>המשמרות שלי</b><small>שבוע 12</small></header>
