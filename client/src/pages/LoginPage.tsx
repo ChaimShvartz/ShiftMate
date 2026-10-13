@@ -91,7 +91,6 @@ const LoginPage = () => {
         <main className="login-page" dir="rtl">
             <section className="login-board" aria-hidden>
                 <span className="login-board__mark"><LogoMark size={560} /></span>
-                <Logo height={60} />
                 <div className="login-board__copy">
                     <h2>כל המשמרות והחלפות במקום אחד</h2>
                     <p>המנהל מפרסם לוח, העובדים מבקשים להחליף, וכולם רואים מה השתנה ברגע שזה קורה.</p>
@@ -122,7 +121,7 @@ const LoginPage = () => {
                 <div className="login-theme"><ThemeToggle /></div>
                 <div className="login-card">
                     <header className="login-header">
-                        <Logo height={52} />
+                        <Logo height={72} />
                         <h1>כניסה למערכת</h1>
                         <p className="login-subtitle">הזן את קוד העובד שקיבלת מהמנהל ואת הסיסמה שלך.</p>
                     </header>
