@@ -1,0 +1,265 @@
+import React, { useState } from "react";
+import type { Role, Unit, User } from "../../types";
+
+interface UserFormModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    units: Unit[];
+    onSubmit: (userData: {
+        role: Role;
+        fullName: string;
+        phone: string;
+        email: string;
+        password: string;
+        unitName?: string;
+        maxWeeklyHours?: number | null;
+    }) => Promise<User | null>;
+}
+
+const initialForm = {
+    role: "employee" as Role,
+    fullName: "",
+    phone: "",
+    email: "",
+    password: "",
+    unitName: "",
+    maxWeeklyHours: "",
+};
+
+const UserFormModal = ({
+    isOpen,
+    onClose,
+    units,
+    onSubmit,
+}: UserFormModalProps) => {
+    const [formData, setFormData] = useState(initialForm);
+    const [status, setStatus] = useState<{
+        loading: boolean;
+        error: string | null;
+        createdUser: User | null;
+    }>({
+        loading: false,
+        error: null,
+        createdUser: null,
+    });
+
+    if (!isOpen) return null;
+
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    ) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatus((prev) => ({ ...prev, loading: true, error: null }));
+
+        try {
+            const result = await onSubmit({
+                role: formData.role,
+                fullName: formData.fullName.trim(),
+                phone: formData.phone.trim(),
+                email: formData.email.trim(),
+                password: formData.password,
+                unitName: formData.unitName || undefined,
+                maxWeeklyHours: formData.maxWeeklyHours
+                    ? Number(formData.maxWeeklyHours)
+                    : null,
+            });
+
+            if (result) {
+                setStatus({
+                    loading: false,
+                    error: null,
+                    createdUser: result,
+                });
+            }
+        } catch (err: any) {
+            setStatus((prev) => ({
+                ...prev,
+                loading: false,
+                error: err?.message || "שגיאה ביצירת משתמש",
+            }));
+        }
+    };
+
+    const handleClose = () => {
+        setFormData(initialForm);
+        setStatus({ loading: false, error: null, createdUser: null });
+        onClose();
+    };
+
+    return (
+        <div className="modal-backdrop" dir="rtl">
+            <div className="modal-content">
+                <header className="modal-header">
+                    <h3>הוספת משתמש חדש</h3>
+                    <button
+                        type="button"
+                        className="btn-close"
+                        onClick={handleClose}
+                    >
+                        ✕
+                    </button>
+                </header>
+
+                {status.error && (
+                    <div className="error-message">{status.error}</div>
+                )}
+
+                {status.createdUser ? (
+                    <div className="modal-success-content">
+                        <div className="success-icon">✅</div>
+                        <h4>המשתמש נוצר בהצלחה!</h4>
+                        <p>
+                            <strong>{status.createdUser.fullName}</strong> נוסף
+                            למערכת.
+                        </p>
+                        <div className="code-box">
+                            <span>קוד עובד שהוקצה:</span>
+                            <strong className="code-value">
+                                #{status.createdUser.employeeCode}
+                            </strong>
+                        </div>
+                        <p className="code-note">
+                            מסור קוד זה לעובד לצורך התחברותו הראשונית.
+                        </p>
+                        <button
+                            type="button"
+                            className="btn-submit"
+                            onClick={handleClose}
+                        >
+                            סיום וסגירה
+                        </button>
+                    </div>
+                ) : (
+                    <form onSubmit={handleSubmit} className="modal-form">
+                        <div className="form-group">
+                            <label htmlFor="userRole">תפקיד</label>
+                            <select
+                                id="userRole"
+                                name="role"
+                                value={formData.role}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="employee">עובד</option>
+                                <option value="manager">מנהל יחידה</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="userFullName">שם מלא</label>
+                            <input
+                                id="userFullName"
+                                name="fullName"
+                                type="text"
+                                required
+                                placeholder="לדוגמה: ישראל ישראלי"
+                                value={formData.fullName}
+                                onChange={handleChange}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="userPhone">טלפון</label>
+                            <input
+                                id="userPhone"
+                                name="phone"
+                                type="tel"
+                                required
+                                placeholder="0501234567"
+                                value={formData.phone}
+                                onChange={handleChange}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="userEmail">אימייל</label>
+                            <input
+                                id="userEmail"
+                                name="email"
+                                type="email"
+                                required
+                                placeholder="user@example.com"
+                                value={formData.email}
+                                onChange={handleChange}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="userUnit">שיוך יחידה</label>
+                            <select
+                                id="userUnit"
+                                name="unitName"
+                                value={formData.unitName}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">בחר יחידה...</option>
+                                {units.map((u) => (
+                                    <option key={u.name} value={u.name}>
+                                        {u.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="userPassword">סיסמה זמנית</label>
+                            <input
+                                id="userPassword"
+                                name="password"
+                                type="password"
+                                required
+                                minLength={6}
+                                placeholder="לפחות 6 תווים"
+                                value={formData.password}
+                                onChange={handleChange}
+                            />
+                        </div>
+
+                        {formData.role === "employee" && (
+                            <div className="form-group">
+                                <label htmlFor="maxWeeklyHours">
+                                    מקסימום שעות שבועיות (אופציונלי)
+                                </label>
+                                <input
+                                    id="maxWeeklyHours"
+                                    name="maxWeeklyHours"
+                                    type="number"
+                                    min={1}
+                                    max={168}
+                                    placeholder="ברירת מחדל: 40"
+                                    value={formData.maxWeeklyHours}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        )}
+
+                        <div className="modal-actions">
+                            <button
+                                type="button"
+                                className="btn-cancel"
+                                onClick={handleClose}
+                            >
+                                ביטול
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={status.loading}
+                                className="btn-submit"
+                            >
+                                {status.loading ? "יוצר..." : "צור משתמש"}
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default UserFormModal;
