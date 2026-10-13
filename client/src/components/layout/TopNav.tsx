@@ -33,14 +33,36 @@ export default function TopNav() {
     return (
         <header className="topnav">
             <div className="topnav__inner">
-                <Link to="/" className="topnav__brand" aria-label="ShiftMate - דף הבית"><Logo height={50} /></Link>
+                <Link
+                    to="/"
+                    className="topnav__brand"
+                    aria-label="ShiftMate - דף הבית"
+                >
+                    <Logo height={50} />
+                </Link>
 
                 <nav className="topnav__links" aria-label="ניווט ראשי">
                     {(NAV[user.role] ?? []).map(({ to, label }) => (
-                        <NavLink key={to} to={to} className={({ isActive }) => `topnav__link ${isActive ? "is-active" : ""}`}>
+                        <NavLink
+                            key={to}
+                            to={to}
+                            className={({ isActive }) =>
+                                `topnav__link ${isActive ? "is-active" : ""}`
+                            }
+                        >
                             {({ isActive }) => (
                                 <>
-                                    {isActive && <motion.span layoutId="topnav-pill" className="topnav__pill" transition={{ type: "spring", stiffness: 460, damping: 36 }} />}
+                                    {isActive && (
+                                        <motion.span
+                                            layoutId="topnav-pill"
+                                            className="topnav__pill"
+                                            transition={{
+                                                type: "spring",
+                                                stiffness: 460,
+                                                damping: 36,
+                                            }}
+                                        />
+                                    )}
                                     {label}
                                 </>
                             )}
@@ -51,16 +73,35 @@ export default function TopNav() {
                 <span className="topnav__spacer" />
 
                 <div className="topnav__tools">
-                    <button type="button" className="search-trigger" onClick={() => openSearch(true)} aria-label="חיפוש כללי">
+                    <button
+                        type="button"
+                        className="search-trigger"
+                        onClick={() => openSearch(true)}
+                        aria-label="חיפוש כללי"
+                    >
                         <Search size={16} />
                         <span>חיפוש</span>
                     </button>
                     {user.role !== "admin" && <NotificationBell />}
                     <ThemeToggle />
-                    {user.unitName && <span className="unit-chip"><Building2 size={14} />{user.unitName}</span>}
-                    <NavLink to="/profile" className="user-menu" title="הפרופיל שלי">
-                        <span className="user-menu__text"><strong>{user.fullName}</strong><small>{getRoleLabel(user.role)}</small></span>
-                        <span className="avatar">{initialsOf(user.fullName)}</span>
+                    {user.unitName && (
+                        <span className="unit-chip">
+                            <Building2 size={14} />
+                            {user.unitName}
+                        </span>
+                    )}
+                    <NavLink
+                        to="/profile"
+                        className="user-menu"
+                        title="הפרופיל שלי"
+                    >
+                        <span className="user-menu__text">
+                            <strong>{user.fullName}</strong>
+                            <small>{getRoleLabel(user.role)}</small>
+                        </span>
+                        <span className="avatar">
+                            {initialsOf(user.fullName)}
+                        </span>
                     </NavLink>
                     <button
                         type="button"

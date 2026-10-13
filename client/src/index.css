@@ -498,8 +498,8 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 
 /* ---------- auth ---------------------------------------------------------------------------------------------------------- */
 .login-page { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); background: var(--canvas); }
-.login-board { position: relative; isolation: isolate; background: var(--navy); color: #fff; padding: 52px 60px; display: flex; flex-direction: column; justify-content: flex-end; gap: 28px; overflow: hidden; margin: 14px; border-radius: 32px; }
-.login-board h2 { font-size: 40px; font-weight: 700; line-height: 1.25; max-width: 16ch; letter-spacing: -0.02em; }
+.login-board { position: relative; isolation: isolate; background: var(--navy); color: #fff; padding: 64px 60px; display: flex; flex-direction: column; justify-content: space-between; gap: 28px; overflow: hidden; margin: 14px; border-radius: 32px; }
+.login-board h2 { font-size: 46px; font-weight: 700; line-height: 1.25; max-width: 16ch; letter-spacing: -0.02em; }
 .login-board p { color: var(--navy-dim); max-width: 38ch; margin-top: 12px; }
 .login-board .logo { align-self: flex-start; }
 .login-board > * { position: relative; z-index: 1; }
@@ -552,9 +552,10 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 }
 
 /* ---------- login board extras ---------- */
-.login-board .login-board__mark { position: absolute; z-index: 0; inset-inline-start: -170px; bottom: -210px; opacity: 0.09; animation: slow-spin 60s linear infinite; pointer-events: none; }
+.login-board .login-board__mark { position: absolute; z-index: 0; inset-inline-end: -150px; top: 24%; opacity: 0.1; animation: slow-spin 60s linear infinite; pointer-events: none; }
 .login-board .login-board__mark svg { --logo-ink: #fff; --brand: #fff; --brand-hover: #fff; }
 @keyframes slow-spin { to { transform: rotate(360deg); } }
+.login-board__bottom { display: flex; flex-direction: column; gap: 26px; }
 .login-board__copy p { color: var(--navy-dim); max-width: 38ch; margin-top: 12px; }
 .demo-week { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 16px; border-radius: 22px; background: rgba(255, 255, 255, 0.09); max-width: 560px; }
 .demo-week__tag { position: absolute; top: -10px; inset-inline-start: 16px; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 99px; background: var(--accent); color: var(--on-accent); }

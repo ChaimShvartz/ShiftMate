@@ -5,8 +5,13 @@ export default function Footer() {
     return (
         <footer className="app-footer">
             <div className="app-footer__inner">
-                <Link to="/" aria-label="ShiftMate"><Logo height={26} /></Link>
-                <p>© {new Date().getFullYear()} ShiftMate · ניהול משמרות והחלפות בזמן אמת</p>
+                <Link to="/" aria-label="ShiftMate">
+                    <Logo height={26} />
+                </Link>
+                <p>
+                    © {new Date().getFullYear()} ShiftMate · ניהול משמרות
+                    והחלפות בזמן אמת
+                </p>
             </div>
         </footer>
     );

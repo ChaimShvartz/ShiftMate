@@ -34,17 +34,46 @@ export default function SwapRequestModal({ shift, onConfirm, onClose }: Props) {
     }
 
     return (
-        <Modal open onOpenChange={(o) => !o && onClose()} title="בקשת החלפה למשמרת" description={`${shift.title || "משמרת"} · ${fmtDateLong(shift.startTime)} · ${fmtTimeRange(shift.startTime, shift.endTime)}`}>
+        <Modal
+            open
+            onOpenChange={(o) => !o && onClose()}
+            title="בקשת החלפה למשמרת"
+            description={`${shift.title || "משמרת"} · ${fmtDateLong(shift.startTime)} · ${fmtTimeRange(shift.startTime, shift.endTime)}`}
+        >
             <form onSubmit={handleSubmit} className="modal-form">
                 <div className="form-group">
                     <label htmlFor="swapReason">למה אתה מבקש להחליף?</label>
-                    <textarea id="swapReason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="לדוגמה: תור לרופא, אירוע משפחתי" rows={3} maxLength={300} autoFocus />
-                    <span className="form-hint">{reason.length}/300 · הבקשה תישלח למנהל, ורק אחרי אישורו תופיע בבורסה.</span>
+                    <textarea
+                        id="swapReason"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder="לדוגמה: תור לרופא, אירוע משפחתי"
+                        rows={3}
+                        maxLength={300}
+                        autoFocus
+                    />
+                    <span className="form-hint">
+                        {reason.length}/300 · הבקשה תישלח למנהל, ורק אחרי אישורו
+                        תופיע בבורסה.
+                    </span>
                 </div>
                 {error && <div className="error-message">{error}</div>}
                 <div className="dialog__actions">
-                    <button type="submit" className="btn btn--primary" disabled={loading}>{loading ? "שולח…" : "שלח למנהל"}</button>
-                    <button type="button" className="btn btn--ghost" onClick={onClose} disabled={loading}>ביטול</button>
+                    <button
+                        type="submit"
+                        className="btn btn--primary"
+                        disabled={loading}
+                    >
+                        {loading ? "שולח…" : "שלח למנהל"}
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn--ghost"
+                        onClick={onClose}
+                        disabled={loading}
+                    >
+                        ביטול
+                    </button>
                 </div>
             </form>
         </Modal>

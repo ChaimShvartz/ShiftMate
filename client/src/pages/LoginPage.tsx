@@ -96,25 +96,27 @@ const LoginPage = () => {
                     <p>המנהל מפרסם לוח, העובדים מבקשים להחליף, וכולם רואים מה השתנה ברגע שזה קורה.</p>
                 </div>
 
-                <motion.div className="demo-week" initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.05, delayChildren: 0.3 } } }}>
-                    <span className="demo-week__tag">דוגמה להמחשה</span>
-                    {DEMO.map((d) => (
-                        <div key={d.day} className="demo-week__day">
-                            <small>{d.day}</small>
-                            {d.shifts.map(([time, who, tone]) => (
-                                <motion.span key={time} className={`demo-shift demo-shift--${tone}`} variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 26 } } }}>
-                                    <b>{time}</b>{who}
-                                </motion.span>
-                            ))}
-                        </div>
-                    ))}
-                </motion.div>
+                <div className="login-board__bottom">
+                    <motion.div className="demo-week" initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.05, delayChildren: 0.3 } } }}>
+                        <span className="demo-week__tag">דוגמה להמחשה</span>
+                        {DEMO.map((d) => (
+                            <div key={d.day} className="demo-week__day">
+                                <small>{d.day}</small>
+                                {d.shifts.map(([time, who, tone]) => (
+                                    <motion.span key={time} className={`demo-shift demo-shift--${tone}`} variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 26 } } }}>
+                                        <b>{time}</b>{who}
+                                    </motion.span>
+                                ))}
+                            </div>
+                        ))}
+                    </motion.div>
 
-                <ul className="login-board__points">
-                    <li><CalendarDays size={18} />לוח שבועי ברור לכל עובד</li>
-                    <li><Repeat size={18} />בורסת החלפות שמתעדכנת בזמן אמת</li>
-                    <li><Bell size={18} />התראות מיידיות על כל שינוי</li>
-                </ul>
+                    <ul className="login-board__points">
+                        <li><CalendarDays size={18} />לוח שבועי ברור לכל עובד</li>
+                        <li><Repeat size={18} />בורסת החלפות שמתעדכנת בזמן אמת</li>
+                        <li><Bell size={18} />התראות מיידיות על כל שינוי</li>
+                    </ul>
+                </div>
             </section>
 
             <section className="login-form-side">
