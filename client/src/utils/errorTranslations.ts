@@ -58,7 +58,7 @@ const exact: Record<string, string> = {
         "הקובץ ריק או שמכיל רק את שורת הדוגמה",
     "Please upload a valid Excel file": "יש להעלות קובץ אקסל תקין",
     "Excel schedules can only be uploaded on Thursdays":
-        "ניתן להעלות לוח משמרות ביום רביעי או חמישי בלבד",
+        "ניתן להעלות לוח משמרות ביום חמישי בלבד",
     "A schedule has already been uploaded for this week. Only one upload per Thursday is allowed.":
         "כבר הועלה לוח משמרות לשבוע זה — ניתן להעלות קובץ חדש רק שבוע לאחר ההעלאה האחרונה. לשינוי נקודתי השתמשו בעריכה הידנית",
     "Shift not found": "המשמרת לא נמצאה",

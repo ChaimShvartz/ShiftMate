@@ -4,8 +4,7 @@ import { israelNow } from "../utils/time.js";
 export const shiftsService = {
     createWeek(weekData, latestWeekDoc) {
         const now = new Date();
-        // Temporary for the demo: Wednesday is allowed as well as Thursday (luxon weekday 3 / 4).
-        const isThursday = [3, 4].includes(israelNow(now).weekday);
+        const isThursday = israelNow(now).weekday === 4;
 
         if (!isThursday) {
             throwHttpError(

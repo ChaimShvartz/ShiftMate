@@ -183,3 +183,6 @@ dist-ssr
 .aistudio/
 client/src_backup/
 client/src_redesign_backup/
+
+# Local Netlify folder
+.netlify
