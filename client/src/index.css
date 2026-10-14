@@ -47,6 +47,7 @@
   --r-ctl: 12px;
   --r-box: 16px;
   --r-card: 20px;
+  --nav-h: 88px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   --pc-0-bg: #e1e9ff; --pc-0-edge: #2b58e8; --pc-0-fg: #1c3fb3;
@@ -423,21 +424,6 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .filters .filters__pill { position: absolute; inset: 0; z-index: -1; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-card); }
 
 /* ---------- people directory (admin) ------------------------------------------------------------------------ */
-.people { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 18px; }
-.pcard { display: flex; flex-direction: column; gap: 16px; padding: 20px; background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); }
-.pcard__top { display: flex; align-items: center; gap: 14px; }
-.pcard__top strong { display: block; font-size: 17px; font-weight: 600; line-height: 1.2; }
-.pcard__top small { font: 400 12.5px var(--font-mono); color: var(--ink-3); }
-.pcard__meta { display: grid; gap: 8px; font-size: 14px; color: var(--ink-2); }
-.pcard__meta span { display: flex; align-items: center; gap: 10px; }
-.pcard__meta svg { color: var(--ink-3); }
-.pcard__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); flex-wrap: wrap; }
-.pcard__actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.ucard { display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); }
-.ucard__icon { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand-text); }
-.ucard strong { display: block; font-weight: 600; }
-.ucard small { color: var(--ink-3); }
-.ucard .btn-delete { margin-inline-start: auto; }
 
 /* ---------- dialogs, popovers ------------------------------------------------------------------------------------ */
 .modal-backdrop, .dialog__overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgba(12, 18, 38, 0.5); backdrop-filter: blur(3px); overflow-y: auto; }
@@ -673,3 +659,45 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .scene__mark { position: absolute; left: 50%; top: 50%; width: 440px; height: 440px; margin: -220px 0 0 -220px; opacity: 0.09; animation: slow-spin 80s linear infinite; pointer-events: none; }
 .scene__mark svg { width: 440px; height: 440px; --logo-ink: #fff; --brand: #fff; --brand-hover: #fff; }
 @media (min-width: 1101px) { .login-board .login-board__mark { display: none; } }
+
+/* ---------- people directory (admin) ---------- */
+.dir { display: flex; flex-direction: column; gap: 26px; }
+.dir__title { position: sticky; top: var(--nav-h); z-index: 5; display: flex; align-items: center; gap: 8px; padding: 10px 4px; background: var(--canvas); font-size: 13.5px; font-weight: 700; color: var(--ink-2); }
+.dir__title span { font: 600 12px var(--font-mono); padding: 1px 8px; border-radius: 99px; background: var(--sunken); color: var(--ink-3); }
+.dir__list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--shadow-card); overflow: hidden; }
+.dir__row { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+.dir__row:last-child { border-bottom: 0; }
+.dir__open { flex: 1; min-width: 0; display: grid; grid-template-columns: 44px minmax(150px, 1.6fr) 120px minmax(110px, 1fr) 70px 18px; align-items: center; gap: 14px; padding: 12px 18px; text-align: start; transition: background 0.15s; }
+button.dir__open:hover { background: var(--surface-2); }
+.dir__name { display: flex; flex-direction: column; min-width: 0; }
+.dir__name strong { display: flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dir__name strong svg { color: var(--accent); flex: none; }
+.dir__name small { color: var(--ink-3); font: 400 12.5px var(--font-mono); }
+.dir__role { justify-self: start; }
+.dir__phone { color: var(--ink-2); font-size: 13.5px; text-align: start; }
+.dir__hours { color: var(--ink-3); font-size: 13px; text-align: end; }
+.dir__chev { color: var(--ink-3); }
+.dir__menu { margin-inline: 4px 12px; flex: none; }
+.dir__menu--danger:hover { background: var(--bad-soft); color: var(--bad-text); }
+.dir__open--static { cursor: default; grid-template-columns: 44px 1fr; }
+.dir__unit-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--brand-soft); color: var(--brand-text); }
+.menu__content { z-index: 300; min-width: 190px; padding: 6px; background: var(--surface); border-radius: 16px; border: 1px solid var(--line); box-shadow: var(--shadow-pop); animation: select-in 0.16s var(--ease); }
+.menu__item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 14.5px; cursor: pointer; outline: none; user-select: none; }
+.menu__item[data-highlighted] { background: var(--brand-soft); color: var(--brand-text); }
+.menu__item--danger { color: var(--bad-text); }
+.menu__item--danger[data-highlighted] { background: var(--bad-soft); color: var(--bad-text); }
+.menu__sep { height: 1px; margin: 4px 6px; background: var(--line); }
+.facts { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-box); overflow: hidden; }
+.facts > div { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.facts > div:last-child { border-bottom: 0; }
+.facts dt { display: flex; align-items: center; gap: 8px; color: var(--ink-3); font-size: 13.5px; }
+.facts dd { display: flex; align-items: center; gap: 8px; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.copy-mini { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; color: var(--ink-3); flex: none; }
+.copy-mini:hover { background: var(--sunken); color: var(--ink); }
+@media (max-width: 860px) {
+  :root { --nav-h: 124px; }
+  .dir__open { grid-template-columns: 44px 1fr auto; gap: 12px; padding: 12px 10px 12px 6px; }
+  .dir__phone, .dir__hours, .dir__chev { display: none; }
+  .dir__role { grid-column: 3; grid-row: 1; }
+  .dir__menu { margin-inline: 0 6px; }
+}

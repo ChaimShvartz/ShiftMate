@@ -8,6 +8,7 @@ export interface User {
     email: string;
     unitName?: string | null;
     maxWeeklyHours?: number | null;
+    created_at?: string;
 }
 
 export interface Unit {

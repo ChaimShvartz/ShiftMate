@@ -16,7 +16,7 @@ interface Props {
 const UnitsSection = ({ units, onAddUnit, onDeleteUnit, loading, initialQuery = "" }: Props) => {
     const [name, setName] = useState("");
     const [query, setQuery] = useState(initialQuery);
-    const rows = useMemo(() => units.filter((u) => matches(query, u.name)), [units, query]);
+    const rows = useMemo(() => units.filter((u) => matches(query, u.name)).sort((a, b) => a.name.localeCompare(b.name, "he")), [units, query]);
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -48,16 +48,19 @@ const UnitsSection = ({ units, onAddUnit, onDeleteUnit, loading, initialQuery = 
             {rows.length === 0 ? (
                 <div className="detail__empty"><strong>{query ? "לא נמצאו יחידות" : "עדיין אין יחידות"}</strong><span>{query ? "נסה חיפוש אחר." : "הוסף את היחידה הראשונה בטופס למעלה."}</span></div>
             ) : (
-                <div className="people">
+                <ul className="dir__list dir__list--plain">
                     {rows.map((u) => (
-                        <article key={u.name} className="ucard">
-                            <span className="ucard__icon"><Building2 size={22} /></span>
-                            <div><strong>{u.name}</strong><small>נוצרה {u.created_at ? new Date(u.created_at).toLocaleDateString("he-IL") : "—"}</small></div>
-                            <button type="button" className="btn-delete" onClick={() => void remove(u.name)}><Trash2 size={12} />מחק</button>
-                        </article>
+                        <li key={u.name} className="dir__row dir__row--unit">
+                            <span className="dir__open dir__open--static">
+                                <span className="dir__unit-icon"><Building2 size={18} /></span>
+                                <span className="dir__name"><strong>{u.name}</strong><small>נוצרה {u.created_at ? new Date(u.created_at).toLocaleDateString("he-IL") : "—"}</small></span>
+                            </span>
+                            <button type="button" className="icon-btn dir__menu dir__menu--danger" aria-label={`מחק את היחידה ${u.name}`} title="מחיקת יחידה" onClick={() => void remove(u.name)}><Trash2 size={17} /></button>
+                        </li>
                     ))}
-                </div>
+                </ul>
             )}
+            <p className="muted" style={{ marginTop: 14, fontSize: 13 }}>{rows.length} מתוך {units.length} יחידות</p>
         </section>
     );
 };
