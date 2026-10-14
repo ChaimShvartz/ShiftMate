@@ -9,7 +9,7 @@ export function createApp() {
 
     app.use(loggerMiddleware, cors(), express.json());
 
-    app.get("/api/health", (_req, res) => {
+    app.get("/", (_req, res) => {
         res.json({ ok: true });
     });
 
